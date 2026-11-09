@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RoomView, RoomCommand } from "./protocol";
 export const apiDefault =
-  import.meta.env.VITE_API_URL || localStorage.getItem("ain-seen-api") || (import.meta.env.DEV ? "/api" : "");
+  import.meta.env.VITE_API_URL ||
+  localStorage.getItem("ain-seen-api") ||
+  (import.meta.env.DEV ? "/api" : "");
 export async function api<T>(
   base: string,
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
+  if (!base) throw Error("خدمة اللعب غير متاحة حاليًا. جرّب لاحقًا.");
   const response = await fetch(base.replace(/\/$/, "") + path, {
     ...init,
     headers: { "Content-Type": "application/json", ...init.headers },

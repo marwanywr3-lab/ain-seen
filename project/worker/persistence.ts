@@ -8,6 +8,12 @@ export interface RoomEvent {
   at: number;
 }
 export interface RoomRecord {
+  members?: {
+    id: string;
+    name: string;
+    key: string;
+    role: "red" | "blue" | "viewer";
+  }[];
   code: string;
   mode: Mode;
   names: [string, string];
@@ -68,22 +74,56 @@ export async function saveRoomToD1(
         ),
     );
   }
-  for (const role of ["host", "red", "blue"] as const) {
-    const bytes = await crypto.subtle.digest(
-      "SHA-256",
-      new TextEncoder().encode(s.keys[role]),
-    );
-    const hash = Array.from(new Uint8Array(bytes), (b) =>
-      b.toString(16).padStart(2, "0"),
-    ).join("");
-    statements.push(
-      db
-        .prepare(
-          "INSERT OR IGNORE INTO room_sessions(room_code,role,credential_hash) VALUES(?,?,?)",
-        )
-        .bind(s.code, role, hash),
-    );
-  }
+  const memberRows = await Promise.all(
+    (s.members ?? []).map(async (m) => {
+      const bytes = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(m.key),
+      );
+      return {
+        id: m.id,
+        name: m.name,
+        role: m.role,
+        hash: Array.from(new Uint8Array(bytes), (b) =>
+          b.toString(16).padStart(2, "0"),
+        ).join(""),
+      };
+    }),
+  );
+  statements.push(
+    db
+      .prepare(
+        `INSERT INTO room_members(room_code,member_id,name,role,credential_hash)
+    SELECT ?,json_extract(value,'$.id'),json_extract(value,'$.name'),json_extract(value,'$.role'),json_extract(value,'$.hash') FROM json_each(?) WHERE 1
+    ON CONFLICT(room_code,member_id) DO UPDATE SET name=excluded.name,role=excluded.role,credential_hash=excluded.credential_hash`,
+      )
+      .bind(s.code, JSON.stringify(memberRows)),
+  );
+  const hostBytes = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(s.keys.host),
+  );
+  const credentials = [
+    {
+      role: "host",
+      hash: Array.from(new Uint8Array(hostBytes), (b) =>
+        b.toString(16).padStart(2, "0"),
+      ).join(""),
+    },
+    ...memberRows
+      .filter((m) => m.role !== "viewer")
+      .map((m) => ({ role: m.role, hash: m.hash })),
+  ];
+  statements.push(
+    db.prepare("DELETE FROM room_sessions WHERE room_code=?").bind(s.code),
+  );
+  statements.push(
+    db
+      .prepare(
+        `INSERT INTO room_sessions(room_code,role,credential_hash) SELECT ?,json_extract(value,'$.role'),json_extract(value,'$.hash') FROM json_each(?)`,
+      )
+      .bind(s.code, JSON.stringify(credentials)),
+  );
   statements.push(
     db
       .prepare(

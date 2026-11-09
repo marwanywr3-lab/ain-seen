@@ -50,12 +50,87 @@ try {
     return r;
   };
   assert.equal((await act(keys.host, { type: "START" })).status, 409);
-  for (const key of [keys.host, keys.red, keys.blue, ""]) {
+  assert.equal(code.length, 8);
+  assert.deepEqual(Object.keys(keys), ["host"]);
+  const joined = {};
+  for (const [team, name] of [
+    ["red", "سالم"],
+    ["blue", "فهد"],
+    ["guest", "مروان"],
+  ]) {
+    const res = await request(`/rooms/${code}/join`, {
+      method: "POST",
+      data: { name },
+    });
+    assert.equal(res.status, 200);
+    joined[team] = res.data;
+    keys[team] = res.data.key;
+  }
+  for (const key of [keys.host, keys.red, keys.blue, keys.guest, ""]) {
     const c = await connect(code, key);
     sockets.push(c.ws);
   }
   host = (await request(`/rooms/${code}`, { key: keys.host })).data;
   assert.equal((await act(keys.red, { type: "START" })).status, 403);
+  assert.equal((await act(keys.host, { type: "START" })).status, 409);
+  assert.equal(
+    (
+      await act(keys.red, {
+        type: "ASSIGN_CAPTAIN",
+        team: "red",
+        memberId: joined.red.memberId,
+      })
+    ).status,
+    403,
+  );
+  assert.equal(
+    (
+      await act(keys.host, {
+        type: "ASSIGN_CAPTAIN",
+        team: "red",
+        memberId: joined.red.memberId,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await act(keys.host, {
+        type: "ASSIGN_CAPTAIN",
+        team: "blue",
+        memberId: joined.blue.memberId,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await request(`/rooms/${code}`, { key: keys.red })).data.role,
+    "red",
+  );
+  assert.equal(
+    (
+      await act(keys.host, {
+        type: "ASSIGN_CAPTAIN",
+        team: "red",
+        memberId: joined.guest.memberId,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await request(`/rooms/${code}`, { key: keys.red })).data.role,
+    "viewer",
+  );
+  assert.equal(
+    (
+      await act(keys.host, {
+        type: "ASSIGN_CAPTAIN",
+        team: "red",
+        memberId: joined.red.memberId,
+      })
+    ).status,
+    200,
+  );
   assert.equal((await act(keys.host, { type: "START" })).status, 200);
   const team = host.game.turn;
   const rival = team === "red" ? "blue" : "red";
@@ -226,6 +301,18 @@ try {
   assert.ok(events.results.some((e) => e.event_type === "CREATE_ROOM"));
   assert.ok(events.results.some((e) => e.event_type === "EXPIRE_TIMER"));
   assert.ok(events.results.some((e) => e.event_type === "SUBMIT_ANSWER"));
+  const members = await db
+    .prepare("SELECT * FROM room_members WHERE room_code=?")
+    .bind(code)
+    .all();
+  assert.equal(members.results.length, 3);
+  assert.ok(
+    members.results.every(
+      (m) =>
+        m.credential_hash.length === 64 &&
+        !Object.values(keys).includes(m.credential_hash),
+    ),
+  );
   const sessions = await db
     .prepare("SELECT * FROM room_sessions WHERE room_code=?")
     .bind(code)
@@ -239,7 +326,7 @@ try {
     ),
   );
   console.log(
-    "PASS: real Worker/D1/DO/WebSocket integration, role enforcement, secret redaction, scoring, atomic duplicate buzzer, pause, actual timer alarm, reconnect, admin revision guard, and D1 room/team/inventory/audit/event/session storage",
+    "PASS: real Worker/D1/DO/WebSocket integration, role enforcement, secret redaction, scoring, atomic duplicate buzzer, pause, actual timer alarm, reconnect, admin revision guard, and D1 storage plus code-based joining and host captain assignment",
   );
 } finally {
   for (const ws of sockets) ws.close();

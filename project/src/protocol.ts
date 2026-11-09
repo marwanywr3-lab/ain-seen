@@ -15,7 +15,14 @@ export type PublicGame = Omit<
   }[];
   current: PublicQuestion | null;
 };
+export interface ParticipantView {
+  id: string;
+  name: string;
+  role: "red" | "blue" | "viewer";
+  connected: boolean;
+}
 export interface RoomView {
+  participants: ParticipantView[];
   code: string;
   revision: number;
   mode: Mode;
@@ -27,12 +34,16 @@ export interface RoomView {
   presence: Record<Role, number>;
 }
 export type RoomCommand =
-  { type: "START" } | { type: "PAUSE"; paused: boolean } | GameAction;
+  | { type: "START" }
+  | { type: "ASSIGN_CAPTAIN"; team: TeamId; memberId: string }
+  | { type: "PAUSE"; paused: boolean }
+  | GameAction;
 export function allowed(role: Role, mode: Mode, command: RoomCommand): boolean {
   if (role === "viewer") return false;
   if (
     [
       "START",
+      "ASSIGN_CAPTAIN",
       "PAUSE",
       "REVEAL_QUESTION",
       "RESOLVE_ROUND",
@@ -76,6 +87,8 @@ export function validCommand(v: unknown): v is RoomCommand {
     case "RESOLVE_ROUND":
     case "END_MATCH":
       return true;
+    case "ASSIGN_CAPTAIN":
+      return team && typeof a.memberId === "string" && a.memberId.length <= 80;
     case "PAUSE":
       return typeof a.paused === "boolean";
     case "SELECT_CELL":

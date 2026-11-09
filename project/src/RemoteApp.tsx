@@ -23,14 +23,43 @@ function Animation({
 }) {
   const endRef = useRef(onEnd);
   endRef.current = onEnd;
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => endRef.current(), kind === "turn" ? 2400 : 2100);
+    if (ready) return;
+    const fallback = setTimeout(() => {
+      setFailed(true);
+      setReady(true);
+    }, 5000);
+    return () => clearTimeout(fallback);
+  }, [ready]);
+  useEffect(() => {
+    if (!ready) return;
+    const t = setTimeout(() => endRef.current(), kind === "turn" ? 3800 : 3200);
     return () => clearTimeout(t);
-  }, [kind]);
+  }, [kind, ready]);
   return (
-    <div className={`animation ${kind}`} aria-hidden="true">
-      <img src={kind === "intro" ? icon : wordmark} alt="" />
-      {kind === "turn" && (
+    <div
+      className={`animation ${kind} ${ready ? "ready" : ""}`}
+      aria-label="بداية عين سين"
+    >
+      {!ready && <span className="logo-loading">عين سين</span>}
+      {failed ? (
+        <h1 className="fallback-logo">عين سين</h1>
+      ) : (
+        <img
+          src={kind === "intro" ? icon : wordmark}
+          alt="عين سين"
+          loading="eager"
+          onLoad={() => setReady(true)}
+          onError={() => {
+            setFailed(true);
+            setReady(true);
+          }}
+          style={{ animationPlayState: ready ? "running" : "paused" }}
+        />
+      )}
+      {kind === "turn" && ready && (
         <div className={`turn-title ${color}`}>
           <small>الدور الآن</small>
           <h1>{name}</h1>
@@ -39,47 +68,80 @@ function Animation({
     </div>
   );
 }
-function Share({ code, keys }: { code: string; keys: Record<string, string> }) {
-  const [copied, setCopied] = useState("");
-  const link = (key = "") =>
-    `${location.origin}${location.pathname}#room=${code}${key ? `&key=${key}` : ""}`;
+function RoomCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <details className="panel sharing">
-      <summary>روابط الدخول — احتفظ بروابط القادة خاصة</summary>
-      {(["red", "blue", "viewer"] as const).map((role) => (
-        <div key={role}>
-          <b>
-            {role === "red"
-              ? "قائد الأحمر"
-              : role === "blue"
-                ? "قائد الأزرق"
-                : "المشاهد وشاشة العرض"}
-          </b>
-          <button
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(link(keys[role]));
-                setCopied(role);
-              } catch {
-                setCopied("تعذر النسخ، انسخ الرابط من الحقل");
-              }
-            }}
-          >
-            نسخ الرابط
-          </button>
-          <input
-            aria-label={`رابط ${role}`}
-            readOnly
-            value={link(keys[role])}
-          />
-          {copied === role && <small>تم النسخ</small>}
+    <section className="room-code">
+      <span>رمز الغرفة — أرسله للمشاركين</span>
+      <strong dir="ltr">{code}</strong>
+      <button
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(code);
+            setCopied(true);
+          } catch {
+            setCopied(false);
+          }
+        }}
+      >
+        {copied ? "تم نسخ الرمز" : "نسخ الرمز"}
+      </button>
+      <p>يدخل المشاركون بالرمز وأسمائهم، ثم يختار المقدم القائدين.</p>
+    </section>
+  );
+}
+function LobbyMembers({
+  room,
+  host,
+  send,
+}: {
+  room: RoomView;
+  host: boolean;
+  send: (action: RoomCommand) => void;
+}) {
+  return (
+    <section className="lobby-members">
+      <h2>المشاركون ({room.participants.length})</h2>
+      {!room.participants.length && <p>بانتظار دخول المشاركين بالرمز…</p>}
+      {room.participants.map((p) => (
+        <div
+          key={p.id}
+          className={`member-row ${p.role !== "viewer" ? p.role : ""}`}
+        >
+          <div>
+            <b>{p.name}</b>
+            <small>
+              {p.connected ? "متصل" : "غير متصل"} ·{" "}
+              {p.role === "red"
+                ? "قائد الأحمر"
+                : p.role === "blue"
+                  ? "قائد الأزرق"
+                  : "مشارك"}
+            </small>
+          </div>
+          {host && room.mode === "phones" && (
+            <div>
+              {(["red", "blue"] as const).map((team) => (
+                <button
+                  key={team}
+                  className={team}
+                  disabled={p.role === team}
+                  onClick={() =>
+                    send({ type: "ASSIGN_CAPTAIN", team, memberId: p.id })
+                  }
+                >
+                  {team === "red" ? "قائد الأحمر" : "قائد الأزرق"}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ))}
-    </details>
+    </section>
   );
 }
 export default function RemoteApp() {
-  const [base, setBase] = useState(apiDefault);
+  const [base] = useState(apiDefault);
   const [route, setRoute] = useState(location.hash);
   const [intro, setIntro] = useState(true);
   const [names, setNames] = useState<[string, string]>([
@@ -88,26 +150,39 @@ export default function RemoteApp() {
   ]);
   const [mode, setMode] = useState<Mode>("phones");
   const [join, setJoin] = useState("");
+  const [joinName, setJoinName] = useState("");
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   useEffect(() => {
     const listen = () => setRoute(location.hash);
     window.addEventListener("hashchange", listen);
+
     return () => window.removeEventListener("hashchange", listen);
   }, []);
   const params = new URLSearchParams(route.slice(1));
   const code = params.get("room") || "";
   const key =
-    params.get("key") || localStorage.getItem(`ain-session-${code}`) || "";
+    params.get("key") || sessionStorage.getItem(`ain-session-${code}`) || "";
   useEffect(() => {
     if (code && params.get("key")) {
-      localStorage.setItem(`ain-session-${code}`, key);
+      sessionStorage.setItem(`ain-session-${code}`, key);
       history.replaceState(null, "", `${location.pathname}#room=${code}`);
     }
   }, [code, key]);
-  const saveBase = (value: string) => {
-    setBase(value);
-    localStorage.setItem("ain-seen-api", value);
+  const joinRoom = async () => {
+    try {
+      setCreating(true);
+      const data = await api<{ key: string }>(base, `/rooms/${join}/join`, {
+        method: "POST",
+        body: JSON.stringify({ name: joinName }),
+      });
+      location.hash = `room=${join}&key=${data.key}`;
+      setError("");
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setCreating(false);
+    }
   };
   const create = async () => {
     try {
@@ -117,7 +192,7 @@ export default function RemoteApp() {
         "/rooms",
         { method: "POST", body: JSON.stringify({ names, mode }) },
       );
-      localStorage.setItem(`ain-keys-${data.code}`, JSON.stringify(data.keys));
+
       location.hash = `room=${data.code}&key=${data.keys.host}`;
       setError("");
     } catch (e) {
@@ -158,18 +233,6 @@ export default function RemoteApp() {
           </section>
           <section className="panel">
             <h2>جهّز القيم</h2>
-            {!import.meta.env.VITE_API_URL && (
-              <label>
-                عنوان خدمة اللعبة
-                <input
-                  dir="ltr"
-                  type="url"
-                  placeholder="https://your-api.workers.dev"
-                  value={base}
-                  onChange={(e) => saveBase(e.target.value)}
-                />
-              </label>
-            )}
             <label>
               الفريق الأحمر
               <input
@@ -198,13 +261,20 @@ export default function RemoteApp() {
             </label>
             <button
               className="primary"
-              disabled={!base || creating}
+              disabled={creating}
               onClick={() => void create()}
             >
-              {creating ? "نجهز الغرفة…" : "أنشئ المباراة ←"}
+              {creating ? "نجهز الغرفة…" : "أنشئ جلسة ←"}
             </button>
             <hr />
-            <h3>ادخل للمشاهدة</h3>
+            <h3>انضم للجلسة</h3>
+            <input
+              aria-label="اسم المشارك"
+              placeholder="اسمك"
+              maxLength={32}
+              value={joinName}
+              onChange={(e) => setJoinName(e.target.value)}
+            />
             <input
               aria-label="رمز الغرفة"
               placeholder="رمز الغرفة"
@@ -214,17 +284,28 @@ export default function RemoteApp() {
                   e.target.value
                     .toUpperCase()
                     .replace(/[^A-Z0-9]/g, "")
-                    .slice(0, 10),
+                    .slice(0, 8),
                 )
               }
             />
             <button
-              disabled={join.length !== 10 || !base}
+              disabled={join.length !== 8 || !joinName.trim() || creating}
+              onClick={() => {
+                void joinRoom();
+              }}
+            >
+              انضم بالرمز
+            </button>
+            <button
+              disabled={join.length !== 8}
               onClick={() => {
                 location.hash = `room=${join}`;
               }}
             >
-              دخول المشاهد / الشاشة
+              فتح شاشة العرض
+            </button>
+            <button className="replay-intro" onClick={() => setIntro(true)}>
+              إعادة عرض البداية
             </button>
             {error && (
               <p className="error" role="alert">
@@ -287,12 +368,6 @@ function Room({
         <a href="#">الرجوع</a>
       </main>
     );
-  const keys = host
-    ? (JSON.parse(localStorage.getItem(`ain-keys-${code}`) || "{}") as Record<
-        string,
-        string
-      >)
-    : {};
   const can = (team: TeamId) =>
     connected && !r.paused && (r.mode === "single" ? host : r.role === team);
   const command = (a: RoomCommand) => {
@@ -337,13 +412,18 @@ function Room({
               </div>
             ))}
           </div>
+          <LobbyMembers
+            room={r}
+            host={Boolean(host && connected)}
+            send={command}
+          />
           {host && (
             <>
               <p>
                 المقدم حاضر دائمًا. في وضع الجوالات يلزم اتصال القائدين قبل
                 البداية.
               </p>
-              <Share code={code} keys={keys} />
+              <RoomCode code={code} />
               <button
                 className="primary"
                 disabled={
@@ -678,7 +758,7 @@ function Room({
                   </p>
                 ))}
               </details>
-              <Share code={code} keys={keys} />
+              <RoomCode code={code} />
             </>
           )}
         </>

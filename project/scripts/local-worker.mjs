@@ -43,6 +43,13 @@ for (const statement of roomsSchema
   .map((s) => s.trim())
   .filter(Boolean))
   await db.prepare(statement).run();
+for (const statement of (
+  await readFile("migrations/0003_room_members.sql", "utf8")
+)
+  .split(";")
+  .map((s) => s.trim())
+  .filter(Boolean))
+  await db.prepare(statement).run();
 console.log(`Local Worker ready at ${await mf.ready}`);
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, async () => {

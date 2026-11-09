@@ -32,7 +32,14 @@ interface Bank {
   disabled: number[];
   revision: number;
 }
+interface Member {
+  id: string;
+  name: string;
+  key: string;
+  role: "red" | "blue" | "viewer";
+}
 interface Saved {
+  members?: Member[];
   createdAt?: number;
   events?: RoomEvent[];
   code: string;
@@ -128,10 +135,11 @@ export default {
         const code = crypto
           .randomUUID()
           .replaceAll("-", "")
-          .slice(0, 10)
+          .slice(0, 8)
           .toUpperCase();
         const keys = { host: token(), red: token(), blue: token() };
         const room: Saved = {
+          members: [],
           createdAt: Date.now(),
           events: [
             {
@@ -159,8 +167,8 @@ export default {
             body: JSON.stringify(room),
           }),
         );
-        if (res.ok) res = json({ code, keys });
-      } else if (/^\/rooms\/[A-Z0-9]{10}(\/ws)?$/.test(url.pathname)) {
+        if (res.ok) res = json({ code, keys: { host: keys.host } });
+      } else if (/^\/rooms\/[A-Z0-9]{8}(\/(ws|join))?$/.test(url.pathname)) {
         const code = url.pathname.split("/")[2]!;
         res = await env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(req);
       } else if (url.pathname === "/admin/bank") {
@@ -212,10 +220,27 @@ export class GameRoom extends DurableObject<Env> {
     });
   }
   private role(key: string): Role {
-    if (this.saved)
-      for (const role of ["host", "red", "blue"] as const)
-        if (this.saved.keys[role] === key) return role;
-    return "viewer";
+    if (!this.saved) return "viewer";
+    if (key === this.saved.keys.host) return "host";
+    return this.saved.members?.find((m) => m.key === key)?.role ?? "viewer";
+  }
+  private memberId(key: string) {
+    return this.saved?.members?.find((m) => m.key === key)?.id;
+  }
+  private refreshRoles() {
+    for (const ws of this.ctx.getWebSockets()) {
+      const a = ws.deserializeAttachment() as {
+        role?: Role;
+        memberId?: string;
+        joined: number;
+      };
+      if (a.memberId) {
+        const role =
+          this.saved?.members?.find((m) => m.id === a.memberId)?.role ??
+          "viewer";
+        ws.serializeAttachment({ ...a, role });
+      }
+    }
   }
   private presence(): Record<Role, number> {
     const count = { host: 0, red: 0, blue: 0, viewer: 0 };
@@ -228,6 +253,18 @@ export class GameRoom extends DurableObject<Env> {
   private view(role: Role): RoomView {
     const s = this.saved!;
     return {
+      participants: (s.members ?? []).map((m) => ({
+        id: m.id,
+        name: m.name,
+        role: m.role,
+        connected: this.ctx
+          .getWebSockets()
+          .some(
+            (ws) =>
+              (ws.deserializeAttachment() as { memberId?: string } | null)
+                ?.memberId === m.id,
+          ),
+      })),
       code: s.code,
       revision: s.revision,
       mode: s.mode,
@@ -323,6 +360,33 @@ export class GameRoom extends DurableObject<Env> {
         return json({ error: "الغرفة غير متاحة أو انتهت صلاحيتها" }, 404);
       this.expire();
       await this.persist();
+      if (url.pathname.endsWith("/join")) {
+        if (req.method !== "POST")
+          return json({ error: "طريقة غير مدعومة" }, 405);
+        const input = (await body(req)) as Record<string, unknown>;
+        if (
+          typeof input.name !== "string" ||
+          !input.name.trim() ||
+          input.name.trim().length > 32
+        )
+          return json({ error: "اكتب اسمًا من حرف إلى ٣٢ حرفًا" }, 400);
+        const members = (this.saved.members ??= []);
+        if (members.length >= 40) return json({ error: "الغرفة ممتلئة" }, 409);
+        if (this.saved.game)
+          return json({ error: "بدأت المباراة؛ يمكنك فتح شاشة العرض" }, 409);
+        const m: Member = {
+          id: crypto.randomUUID(),
+          name: input.name.trim(),
+          key: token(),
+          role: "viewer",
+        };
+        members.push(m);
+        this.saved.revision++;
+        this.recordEvent("JOIN_ROOM");
+        await this.persist();
+        this.broadcast();
+        return json({ key: m.key, memberId: m.id });
+      }
       if (url.pathname.endsWith("/ws")) {
         if (req.headers.get("Upgrade") !== "websocket")
           return json({ error: "WebSocket required" }, 426);
@@ -363,7 +427,23 @@ export class GameRoom extends DurableObject<Env> {
         409,
       );
     const action = msg.action as RoomCommand;
-    if (action.type === "START") {
+    if (action.type === "ASSIGN_CAPTAIN") {
+      if (
+        s.mode !== "phones" ||
+        (s.game && !["BOARD", "RESOLUTION"].includes(s.game.phase))
+      )
+        return json(
+          { error: "تعيين القادة متاح قبل البداية وبين الجولات" },
+          409,
+        );
+      const member = s.members?.find((m) => m.id === action.memberId);
+      if (!member) return json({ error: "المشارك غير موجود" }, 404);
+      for (const m of s.members ?? [])
+        if (m.role === action.team) m.role = "viewer";
+      member.role = action.team;
+      s.keys[action.team] = member.key;
+      this.refreshRoles();
+    } else if (action.type === "START") {
       if (s.game) return json({ error: "بدأت المباراة بالفعل" }, 409);
       if (s.mode === "phones") {
         const p = this.presence();
@@ -411,7 +491,8 @@ export class GameRoom extends DurableObject<Env> {
         if (msg.type === "HELLO" && !attachment.role) {
           const key = typeof msg.key === "string" ? msg.key : "";
           const role = this.role(key);
-          if (key && role === "viewer") {
+          const memberId = this.memberId(key);
+          if (key && role === "viewer" && !memberId) {
             ws.close(1008, "invalid credential");
             return;
           }
@@ -423,7 +504,7 @@ export class GameRoom extends DurableObject<Env> {
                   ?.role === role
               )
                 old.close(1000, "session replaced");
-          ws.serializeAttachment({ role, joined: Date.now() });
+          ws.serializeAttachment({ role, memberId, joined: Date.now() });
           this.expire();
           await this.persist();
           this.broadcast();
