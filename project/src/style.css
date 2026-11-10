@@ -54,7 +54,6 @@ header {
 }
 header img {
   width: 160px;
-  mix-blend-mode: multiply;
 }
 nav {
   display: flex;
@@ -96,7 +95,6 @@ em {
 }
 .hero-icon {
   width: 220px;
-  mix-blend-mode: multiply;
 }
 .panel {
   border: 2px solid #172238;
