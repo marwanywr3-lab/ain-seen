@@ -54,7 +54,10 @@ const bankData = await bankCheck.json();
 if (
   !bankCheck.ok ||
   !Array.isArray(bankData.questions) ||
-  !bankData.questions.length
+  bankData.schemaVersion !== 2 ||
+  bankData.questions.length !== 480 ||
+  new Set(bankData.questions.map((q) => q.categoryId)).size !== 30 ||
+  bankData.questions.some((q) => ![200, 400, 600].includes(q.points))
 )
   throw Error("Published question database check failed");
 await writeFile(

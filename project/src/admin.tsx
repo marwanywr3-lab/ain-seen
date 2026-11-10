@@ -1,3 +1,4 @@
+import { categories } from "./catalog";
 import { useEffect, useState } from "react";
 import { api } from "./client";
 import { createGame, parseQuestions, type Question } from "./engine";
@@ -9,13 +10,14 @@ interface Bank {
 }
 const blank: Question = {
   id: 0,
-  category: "",
-  points: 100,
+  category: categories[0]!.name,
+  categoryId: categories[0]!.id,
+  points: 200,
   difficulty: "سهل",
   question: "",
   options: ["", "", "", ""],
-  correct_answer: "",
-  quick_fact: "",
+  answer: "",
+  hint: "",
 };
 export function Admin({ base }: { base: string }) {
   const [bank, setBank] = useState<Bank | null>(null);
@@ -94,7 +96,12 @@ export function Admin({ base }: { base: string }) {
     try {
       const data = JSON.parse(await file.text());
       const questions = parseQuestions(
-        Array.isArray(data) ? data : data.questions,
+        Array.isArray(data)
+          ? data
+          : (data.questions ??
+              data.categories?.flatMap(
+                (c: { questions: unknown[] }) => c.questions,
+              )),
       );
       const disabled = Array.isArray(data.disabled) ? data.disabled : [];
       if (!bank) return;
@@ -204,7 +211,7 @@ export function Admin({ base }: { base: string }) {
                 onChange={(e) => setPoints(e.target.value)}
               >
                 <option value="">كل القيم</option>
-                {[100, 200, 300].map((p) => (
+                {[200, 400, 600].map((p) => (
                   <option key={p}>{p}</option>
                 ))}
               </select>
@@ -232,13 +239,21 @@ export function Admin({ base }: { base: string }) {
                 <h2>معاينة وتحرير السؤال #{edit.id}</h2>
                 <label>
                   الفئة
-                  <input
-                    required
-                    value={edit.category}
-                    onChange={(e) =>
-                      setEdit({ ...edit, category: e.target.value })
-                    }
-                  />
+                  <select
+                    value={edit.categoryId}
+                    onChange={(e) => {
+                      const c = categories.find(
+                        (c) => c.id === e.target.value,
+                      )!;
+                      setEdit({ ...edit, categoryId: c.id, category: c.name });
+                    }}
+                  >
+                    {categories.map((c) => (
+                      <option value={c.id} key={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </label>
                 <label>
                   النقاط
@@ -247,11 +262,11 @@ export function Admin({ base }: { base: string }) {
                     onChange={(e) =>
                       setEdit({
                         ...edit,
-                        points: Number(e.target.value) as 100 | 200 | 300,
+                        points: Number(e.target.value) as 200 | 400 | 600,
                       })
                     }
                   >
-                    {[100, 200, 300].map((p) => (
+                    {[200, 400, 600].map((p) => (
                       <option key={p}>{p}</option>
                     ))}
                   </select>
@@ -288,10 +303,8 @@ export function Admin({ base }: { base: string }) {
                           options: edit.options.map((o, n) =>
                             n === i ? e.target.value : o,
                           ),
-                          correct_answer:
-                            edit.correct_answer === v
-                              ? e.target.value
-                              : edit.correct_answer,
+                          answer:
+                            edit.answer === v ? e.target.value : edit.answer,
                         })
                       }
                     />
@@ -301,9 +314,9 @@ export function Admin({ base }: { base: string }) {
                   الإجابة الصحيحة
                   <select
                     required
-                    value={edit.correct_answer}
+                    value={edit.answer}
                     onChange={(e) =>
-                      setEdit({ ...edit, correct_answer: e.target.value })
+                      setEdit({ ...edit, answer: e.target.value })
                     }
                   >
                     <option value="">اختر الإجابة</option>
@@ -313,13 +326,11 @@ export function Admin({ base }: { base: string }) {
                   </select>
                 </label>
                 <label>
-                  المعلومة السريعة
+                  التلميح
                   <textarea
                     required
-                    value={edit.quick_fact}
-                    onChange={(e) =>
-                      setEdit({ ...edit, quick_fact: e.target.value })
-                    }
+                    value={edit.hint}
+                    onChange={(e) => setEdit({ ...edit, hint: e.target.value })}
                   />
                 </label>
                 <button
@@ -339,7 +350,7 @@ export function Admin({ base }: { base: string }) {
                   (q) =>
                     (!category || q.category === category) &&
                     (!points || q.points === Number(points)) &&
-                    `${q.question} ${q.quick_fact}`.includes(query),
+                    `${q.question} ${q.hint}`.includes(query),
                 )
                 .map((q) => (
                   <article key={q.id} className="bank-row">
@@ -347,7 +358,7 @@ export function Admin({ base }: { base: string }) {
                       #{q.id} · {q.category} · {q.points}
                     </span>
                     <h3>{q.question}</h3>
-                    <p>{q.correct_answer}</p>
+                    <p>{q.answer}</p>
                     <button
                       disabled={!bank.canEdit}
                       onClick={() => setEdit(structuredClone(q))}

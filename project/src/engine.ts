@@ -1,3 +1,9 @@
+import {
+  categories as catalogCategories,
+  POINTS,
+  defaultCategories,
+  selection,
+} from "./catalog.ts";
 export type TeamId = "red" | "blue";
 export type JokerCard = "FREEZE" | "SWAP" | "FIFTY_FIFTY";
 export type Phase =
@@ -13,12 +19,16 @@ export type Phase =
 export interface Question {
   id: number;
   category: string;
-  points: 100 | 200 | 300;
+  categoryId: string;
+  points: 200 | 400 | 600;
   difficulty: string;
   question: string;
   options: string[];
-  correct_answer: string;
-  quick_fact: string;
+  answer: string;
+  hint: string;
+  sourcePoints?: number;
+  sourceIndex?: number;
+  hintSource?: string;
 }
 export interface Team {
   id: TeamId;
@@ -38,7 +48,8 @@ export interface ScoreAuditLog {
 export interface Cell {
   id: string;
   category: string;
-  points: 100 | 200 | 300;
+  categoryId: string;
+  points: 200 | 400 | 600;
   status: "available" | "active" | "exhausted";
   question: Question;
   fallback: Question;
@@ -88,22 +99,29 @@ export function parseQuestions(input: unknown): Question[] {
     ids.add(q.id as number);
     for (const k of [
       "category",
+      "categoryId",
       "difficulty",
       "question",
-      "correct_answer",
-      "quick_fact",
+      "answer",
+      "hint",
     ])
       if (typeof q[k] !== "string" || !(q[k] as string).trim())
         throw Error(`الحقل ${k} ناقص في السؤال ${q.id}`);
     if (
-      ![100, 200, 300].includes(q.points as number) ||
+      ![200, 400, 600].includes(q.points as number) ||
       !Array.isArray(q.options) ||
       q.options.length !== 4 ||
       q.options.some((x) => typeof x !== "string" || !x.trim()) ||
       new Set(q.options).size !== 4 ||
-      q.options.filter((x) => x === q.correct_answer).length !== 1
+      q.options.filter((x) => x === q.answer).length !== 1
     )
       throw Error(`خيارات أو نقاط غير صالحة للسؤال ${q.id}`);
+    if (
+      !catalogCategories.some(
+        (c) => c.id === q.categoryId && c.name === q.category,
+      )
+    )
+      throw Error(`فئة غير معتمدة للسؤال ${q.id}`);
     return { ...q, options: [...q.options] } as unknown as Question;
   });
 }
@@ -115,9 +133,12 @@ export function createGame(
   questions: Question[],
   names: [string, string],
   seed: number,
+  categoryIds: string[] = defaultCategories,
 ): GameState {
-  const categories = [...new Set(questions.map((q) => q.category))];
-  if (categories.length !== 12) throw Error("تحتاج المباراة إلى ١٢ فئة");
+  const selected = selection(categoryIds);
+  const categories = selected.map((id) =>
+    catalogCategories.find((c) => c.id === id)!,
+  );
   let cursor = seed >>> 0;
   const pick = (pool: Question[]) => {
     cursor = random(cursor);
@@ -134,20 +155,23 @@ export function createGame(
   const sudden = pick(riddles);
   const cells: Cell[] = [];
   for (const category of categories)
-    for (const points of [100, 200, 300] as const) {
+    for (const points of POINTS) {
       const pool = questions.filter(
         (q) =>
-          q.category === category && q.points === points && q.id !== sudden.id,
+          q.categoryId === category.id &&
+          q.points === points &&
+          q.id !== sudden.id,
       );
       if (pool.length < 2)
         throw Error(
-          `نحتاج سؤالين على الأقل: ${category} / ${points} بعد حجز الفاصل`,
+          `نحتاج سؤالين على الأقل: ${category.name} / ${points} بعد حجز الفاصل`,
         );
       const question = pick(pool);
       const fallback = pick(pool.filter((q) => q.id !== question.id));
       cells.push({
-        id: `${category}:${points}`,
-        category,
+        id: `${category.id}:${points}`,
+        category: category.name,
+        categoryId: category.id,
         points,
         status: "available",
         question,
@@ -285,7 +309,7 @@ export function transition(
         } else {
           let pool = s
             .current!.options.map((_, i) => i)
-            .filter((i) => s.current!.options[i] !== s.current!.correct_answer);
+            .filter((i) => s.current!.options[i] !== s.current!.answer);
           s.seed = random(s.seed);
           const first = pool.splice(s.seed % pool.length, 1)[0]!;
           s.seed = random(s.seed);
@@ -307,8 +331,7 @@ export function transition(
         s.hidden.includes(action.index)
       )
         return state;
-      const correct =
-        s.current!.options[action.index] === s.current!.correct_answer;
+      const correct = s.current!.options[action.index] === s.current!.answer;
       if (s.phase === "SUDDEN_ANSWER") {
         s.winner = correct ? action.team : other(action.team);
         stop("FINISHED");

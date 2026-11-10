@@ -1,3 +1,4 @@
+import { sqlStatements } from "./sql-statements.mjs";
 import { Miniflare } from "miniflare";
 import { readFile } from "node:fs/promises";
 export const mf = new Miniflare({
@@ -23,33 +24,17 @@ export const mf = new Miniflare({
 });
 await mf.ready;
 const db = await mf.getD1Database("DB");
-await db
-  .prepare(
-    "CREATE TABLE IF NOT EXISTS question_bank(id INTEGER PRIMARY KEY,payload TEXT NOT NULL,revision INTEGER NOT NULL)",
-  )
-  .run();
-const questions = JSON.parse(await readFile("src/questions.json", "utf8"));
-await db
-  .prepare("INSERT OR IGNORE INTO question_bank VALUES(1,?,1)")
-  .bind(JSON.stringify({ questions, disabled: [] }))
-  .run();
-const roomsSchema = await readFile(
-  "migrations/0002_rooms_and_matches.sql",
-  "utf8",
-);
-for (const statement of roomsSchema
-  .replace(/--[^\n]*/g, "")
-  .split(";")
-  .map((s) => s.trim())
-  .filter(Boolean))
-  await db.prepare(statement).run();
-for (const statement of (
-  await readFile("migrations/0003_room_members.sql", "utf8")
-)
-  .split(";")
-  .map((s) => s.trim())
-  .filter(Boolean))
-  await db.prepare(statement).run();
+for (const file of [
+  "0001_questions.sql",
+  "0002_rooms_and_matches.sql",
+  "0003_room_members.sql",
+  "0004_catalog_v2.sql",
+]) {
+  for (const statement of sqlStatements(
+    await readFile(`migrations/${file}`, "utf8"),
+  ))
+    await db.prepare(statement).run();
+}
 console.log(`Local Worker ready at ${await mf.ready}`);
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, async () => {

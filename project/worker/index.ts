@@ -1,3 +1,4 @@
+import { defaultCategories, selection } from "../src/catalog";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { saveRoomToD1, removeRoomFromD1, type RoomEvent } from "./persistence";
 import { DurableObject } from "cloudflare:workers";
@@ -40,6 +41,8 @@ interface Member {
   role: "red" | "blue" | "viewer";
 }
 interface Saved {
+  schemaVersion: 2;
+  categoryIds: string[];
   hostTeam?: "red" | "blue" | null;
   members?: Member[];
   createdAt?: number;
@@ -60,7 +63,7 @@ async function body(req: Request): Promise<unknown> {
   if (Number(req.headers.get("Content-Length") || 0) > 2500000)
     throw Error("حجم الطلب كبير");
   const raw = await req.text();
-  if (raw.length > 500000) throw Error("حجم الطلب كبير");
+  if (raw.length > 2000000) throw Error("حجم الطلب كبير");
   return JSON.parse(raw);
 }
 const token = () => crypto.randomUUID() + crypto.randomUUID();
@@ -133,7 +136,8 @@ export default {
         const questions = data.questions.filter(
           (q) => !data.disabled.includes(q.id),
         );
-        createGame(questions, b.names as [string, string], 1);
+        const categoryIds = selection(b.categoryIds ?? defaultCategories);
+        createGame(questions, b.names as [string, string], 1, categoryIds);
         const code = crypto
           .randomUUID()
           .replaceAll("-", "")
@@ -141,6 +145,8 @@ export default {
           .toUpperCase();
         const keys = { host: token(), red: token(), blue: token() };
         const room: Saved = {
+          schemaVersion: 2,
+          categoryIds,
           members: [],
           createdAt: Date.now(),
           events: [
@@ -190,7 +196,11 @@ export default {
             !Number.isInteger(v.revision)
           )
             throw Error("بيانات الإدارة غير صالحة");
-          const payload = JSON.stringify({ questions, disabled: v.disabled });
+          const payload = JSON.stringify({
+            schemaVersion: 2,
+            questions,
+            disabled: v.disabled,
+          });
           const result = await env.DB.prepare(
             "UPDATE question_bank SET payload=?,revision=revision+1 WHERE id=1 AND revision=?",
           )
@@ -272,6 +282,7 @@ export class GameRoom extends DurableObject<Env> {
                 ?.memberId === m.id,
           ),
       })),
+      categoryIds: [...s.categoryIds],
       hostTeam: s.hostTeam ?? null,
       code: s.code,
       revision: s.revision,
@@ -364,7 +375,11 @@ export class GameRoom extends DurableObject<Env> {
         await this.persist();
         return json({ ok: true });
       }
-      if (!this.saved || Date.now() > this.saved.expires)
+      if (
+        !this.saved ||
+        this.saved.schemaVersion !== 2 ||
+        Date.now() > this.saved.expires
+      )
         return json({ error: "الغرفة غير متاحة أو انتهت صلاحيتها" }, 404);
       this.expire();
       await this.persist();
@@ -438,7 +453,13 @@ export class GameRoom extends DurableObject<Env> {
         409,
       );
     const action = msg.action as RoomCommand;
-    if (action.type === "SET_HOST_TEAM") {
+    if (action.type === "SET_CATEGORIES") {
+      if (s.game)
+        return json({ error: "اختيار الفئات متاح قبل المباراة فقط" }, 409);
+      const categoryIds = selection(action.categoryIds);
+      createGame(s.questions, s.names, 1, categoryIds);
+      s.categoryIds = categoryIds;
+    } else if (action.type === "SET_HOST_TEAM") {
       if (s.game)
         return json({ error: "حدد مشاركة المقدم قبل بداية المباراة" }, 409);
       s.hostTeam = action.team;
@@ -477,6 +498,7 @@ export class GameRoom extends DurableObject<Env> {
         s.questions,
         s.names,
         crypto.getRandomValues(new Uint32Array(1))[0]!,
+        s.categoryIds,
       );
     } else if (action.type === "PAUSE") {
       if (s.game && s.game.phase !== "BOARD" && s.game.phase !== "RESOLUTION")
@@ -503,7 +525,11 @@ export class GameRoom extends DurableObject<Env> {
         if (typeof message !== "string" || message.length > 10000)
           throw Error("رسالة غير صالحة");
         const msg = JSON.parse(message) as Record<string, unknown>;
-        if (!this.saved || Date.now() > this.saved.expires) {
+        if (
+          !this.saved ||
+          this.saved.schemaVersion !== 2 ||
+          Date.now() > this.saved.expires
+        ) {
           ws.close(1008, "room expired");
           return;
         }
@@ -554,6 +580,12 @@ export class GameRoom extends DurableObject<Env> {
   async alarm() {
     await this.ctx.blockConcurrencyWhile(async () => {
       if (!this.saved) return;
+      if (this.saved.schemaVersion !== 2) {
+        for (const ws of this.ctx.getWebSockets())
+          ws.close(1012, "game upgraded; create new room");
+        await this.ctx.storage.deleteAlarm();
+        return;
+      }
       if (Date.now() >= this.saved.expires) {
         for (const ws of this.ctx.getWebSockets())
           ws.close(1000, "room expired");

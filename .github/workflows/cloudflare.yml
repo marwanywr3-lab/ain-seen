@@ -8,6 +8,11 @@ on:
       - project/worker/**
       - project/src/engine.ts
       - project/src/protocol.ts
+      - project/src/catalog.ts
+      - project/src/categories.json
+      - project/src/data.json
+      - project/migrations/**
+      - project/scripts/deploy.mjs
 permissions:
   contents: write
   pages: write

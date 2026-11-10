@@ -131,7 +131,22 @@ try {
     ).status,
     200,
   );
+  const ids = ["c13", "c14", "c15", "c16", "c17", "c18"];
+  assert.equal(
+    (await act(keys.red, { type: "SET_CATEGORIES", categoryIds: ids })).status,
+    403,
+  );
+  assert.equal(
+    (await act(keys.host, { type: "SET_CATEGORIES", categoryIds: ids })).status,
+    200,
+  );
+  assert.deepEqual(host.categoryIds, ids);
   assert.equal((await act(keys.host, { type: "START" })).status, 200);
+  assert.equal(host.game.cells.length, 18);
+  assert.equal(
+    (await act(keys.host, { type: "SET_CATEGORIES", categoryIds: ids })).status,
+    409,
+  );
   const team = host.game.turn;
   const rival = team === "red" ? "blue" : "red";
   assert.equal(
@@ -163,10 +178,10 @@ try {
   );
   assert.equal((await act(keys.host, { type: "REVEAL_QUESTION" })).status, 200);
   const view = (await request(`/rooms/${code}`, { key: keys[team] })).data;
-  assert.equal("correct_answer" in view.game.current, false);
+  assert.equal("answer" in view.game.current, false);
   assert.equal("sudden" in view.game, false);
   const q = host.game.current;
-  const correct = q.options.indexOf(q.correct_answer);
+  const correct = q.options.indexOf(q.answer);
   const wrong = (correct + 1) % 4;
   assert.equal(
     (await act(keys[rival], { type: "SUBMIT_ANSWER", team, index: correct }))
@@ -249,7 +264,7 @@ try {
   assert.equal(rejoined.state.game.phase, "STEAL_BUZZ");
   const admin = await request("/admin/bank", { key: "local-test-only" });
   assert.equal(admin.status, 200);
-  assert.equal(admin.data.questions.length, 120);
+  assert.equal(admin.data.questions.length, 480);
   assert.equal((await request("/bank")).status, 200);
   const put = await request("/admin/bank", {
     key: "local-test-only",
@@ -415,7 +430,7 @@ try {
       200,
     );
     dualState = (await request(`/rooms/${dualCode}`, { key: dualKey })).data;
-    assert.equal(dualState.game.current.correct_answer, undefined);
+    assert.equal(dualState.game.current.answer, undefined);
     assert.equal(
       (
         await dualAction(dualKey, {

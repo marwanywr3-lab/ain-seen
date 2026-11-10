@@ -36,11 +36,11 @@ test("projection never leaks bank, fallback, seed or unrevealed answers", () => 
     0,
   );
   assert.equal(project(s, "viewer")!.current, null);
-  assert.ok(project(s, "host")!.current?.correct_answer);
+  assert.ok(project(s, "host")!.current?.answer);
   s = transition(s, { type: "REVEAL_QUESTION" }, 0);
   p = project(s, "red")!;
-  assert.equal("correct_answer" in p.current!, false);
-  assert.equal("quick_fact" in p.current!, false);
+  assert.equal("answer" in p.current!, false);
+  assert.equal("hint" in p.current!, false);
 });
 test("wire validation rejects timer injection and invalid team/index/card", () => {
   assert.equal(validCommand({ type: "EXPIRE_TIMER", timerId: 1 }), false);
@@ -90,8 +90,8 @@ test("host player controls own team only and never sees unrevealed answers", () 
   assert.equal(project(state, "host", "red")!.current, null);
   state = transition(state, { type: "REVEAL_QUESTION" }, 0);
   assert.equal(
-    project(state, "host", "red")!.current?.correct_answer,
+    project(state, "host", "red")!.current?.answer,
     undefined,
   );
-  assert.equal(project(state, "host", "red")!.current?.quick_fact, undefined);
+  assert.equal(project(state, "host", "red")!.current?.hint, undefined);
 });

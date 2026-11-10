@@ -1,3 +1,5 @@
+import { CategoryPicker } from "./CategoryPicker";
+import { categories, categoryFor } from "./catalog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, useServiceUrl, useRoom } from "./client";
 import type { Mode, Role, RoomCommand, RoomView } from "./protocol";
@@ -180,6 +182,7 @@ export default function RemoteApp() {
     "الفريق الأحمر",
     "الفريق الأزرق",
   ]);
+  const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [mode, setMode] = useState<Mode>("phones");
   const [join, setJoin] = useState(() => readJoinCode(location.hash));
   const [joinName, setJoinName] = useState("");
@@ -226,7 +229,7 @@ export default function RemoteApp() {
       const data = await api<{ code: string; keys: Record<string, string> }>(
         base,
         "/rooms",
-        { method: "POST", body: JSON.stringify({ names, mode }) },
+        { method: "POST", body: JSON.stringify({ names, mode, categoryIds }) },
       );
 
       location.hash = `room=${data.code}&key=${data.keys.host}`;
@@ -299,7 +302,7 @@ export default function RemoteApp() {
               <em>وسين على الفوز.</em>
             </h1>
             <p>
-              ٣٦ فرصة تقلب النتيجة. تشاوروا، خلّوا القرار للقائد، وخلكم جاهزين
+              ١٨ فرصة تقلب النتيجة. تشاوروا، خلّوا القرار للقائد، وخلكم جاهزين
               للخطف.
             </p>
             <img className="hero-icon" src={icon} alt="أيقونة اللعبة" />
@@ -332,9 +335,10 @@ export default function RemoteApp() {
                 <option value="single">شاشة واحدة مع مقدم</option>
               </select>
             </label>
+            <p>اختر ٦ فئات من القائمة أدناه ثم أنشئ الجلسة.</p>
             <button
               className="primary"
-              disabled={creating || !serviceReady}
+              disabled={creating || !serviceReady || categoryIds.length !== 6}
               onClick={() => void create()}
             >
               {creating ? "نجهز الغرفة…" : "أنشئ جلسة ←"}
@@ -391,6 +395,19 @@ export default function RemoteApp() {
               </p>
             )}
           </section>
+          <CategoryPicker
+            value={categoryIds}
+            onChange={setCategoryIds}
+            disabled={creating}
+          >
+            <button
+              className="primary"
+              disabled={creating || !serviceReady || categoryIds.length !== 6}
+              onClick={() => void create()}
+            >
+              {creating ? "نجهز الغرفة…" : "أنشئ الجلسة بالفئات المختارة ←"}
+            </button>
+          </CategoryPicker>
         </main>
       )}
       <footer>عين سين · القرار للقائد، والمتعة للجميع.</footer>
@@ -420,6 +437,7 @@ function Room({
     phase: string;
     round: number;
   } | null>(null);
+  const [categoryDraft, setCategoryDraft] = useState<string[] | null>(null);
   const [hideHost, setHideHost] = useState(false);
   const s = r?.game;
   const host = r?.role === "host";
@@ -456,6 +474,9 @@ function Room({
     if (connected) void send(a);
   };
   const visibleHost = host && !hideHost;
+  const chosen = categoryDraft ?? r.categoryIds;
+  const categoriesDirty =
+    JSON.stringify(chosen) !== JSON.stringify(r.categoryIds);
   return (
     <main>
       <div className="toolbar">
@@ -471,7 +492,7 @@ function Room({
         </b>
         {host && (
           <button onClick={() => setHideHost(!hideHost)}>
-            {hideHost ? "لوحة المقدم" : "إخفاء أدوات المقدم"}
+            {hideHost ? "لوحة المشرف (Admin)" : "إخفاء أدوات المشرف"}
           </button>
         )}
       </div>
@@ -485,6 +506,42 @@ function Room({
           <summary>دعوة المشاركين — QR ورمز الغرفة</summary>
           <RoomCode code={code} />
         </details>
+      )}
+      {!s && host && (
+        <>
+          <CategoryPicker
+            value={chosen}
+            onChange={setCategoryDraft}
+            disabled={!connected}
+          />
+          <div className="toolbar">
+            <button
+              disabled={!connected || chosen.length !== 6 || !categoriesDirty}
+              onClick={() => {
+                command({ type: "SET_CATEGORIES", categoryIds: chosen });
+              }}
+            >
+              اعتمد الفئات
+            </button>
+            {categoriesDirty && <p>اعتمد اختيار الفئات قبل بدء المباراة.</p>}
+          </div>
+        </>
+      )}
+      {!s && !host && (
+        <section className="panel">
+          <h2>فئات المباراة · ١٨ سؤالًا</h2>
+          <div className="selected-categories">
+            {r.categoryIds.map((id) => {
+              const c = categories.find((c) => c.id === id)!;
+              return (
+                <span key={id}>
+                  <img src={c.icon} alt="" width="50" height="50" />
+                  {c.name}
+                </span>
+              );
+            })}
+          </div>
+        </section>
       )}
       {!s && host && (
         <section className="panel host-player">
@@ -545,6 +602,8 @@ function Room({
                 className="primary"
                 disabled={
                   !connected ||
+                  categoriesDirty ||
+                  chosen.length !== 6 ||
                   (r.mode === "phones" && (!r.presence.red || !r.presence.blue))
                 }
                 onClick={() => command({ type: "START" })}
@@ -578,7 +637,7 @@ function Room({
           </div>
           <div className="toolbar">
             <span>
-              {s.cells.filter((c) => c.status === "exhausted").length} / ٣٦
+              {s.cells.filter((c) => c.status === "exhausted").length} / ١٨
             </span>
             <b>
               {s.phase === "BOARD"
@@ -615,7 +674,12 @@ function Room({
                 (category, i) => (
                   <article className={`category tint-${i % 4}`} key={category}>
                     <h3>
-                      <span>{String(i + 1).padStart(2, "0")}</span>
+                      <img
+                        src={categoryFor(category)?.icon}
+                        alt=""
+                        width="90"
+                        height="90"
+                      />
                       {category}
                     </h3>
                     {s.cells
@@ -740,7 +804,7 @@ function Room({
                             ? "hidden"
                             : "visible",
                         }}
-                        className={`${selected === index ? "selected" : ""} ${["RESOLUTION", "FINISHED"].includes(s.phase) && option === s.current?.correct_answer ? "correct" : ""}`}
+                        className={`${selected === index ? "selected" : ""} ${["RESOLUTION", "FINISHED"].includes(s.phase) && option === s.current?.answer ? "correct" : ""}`}
                         disabled={
                           !s.answerTeam ||
                           !can(s.answerTeam) ||
@@ -776,6 +840,14 @@ function Room({
                         اعتماد الإجابة
                       </button>
                     )}
+                  {visibleHost &&
+                    s.current?.hint &&
+                    s.phase !== "RESOLUTION" && (
+                      <details>
+                        <summary>تلميح للمقدم</summary>
+                        {s.current.hint}
+                      </details>
+                    )}
                   {s.phase === "STEAL_BUZZ" && (
                     <div className="steal">
                       <h2>فرصة الخطف!</h2>
@@ -808,8 +880,8 @@ function Room({
                   {s.phase === "RESOLUTION" && (
                     <div className="resolution">
                       <h2>{s.result}</h2>
-                      <b>الإجابة: {s.current?.correct_answer}</b>
-                      <p>{s.current?.quick_fact}</p>
+                      <b>الإجابة: {s.current?.answer}</b>
+                      <p>{s.current?.hint}</p>
                       {visibleHost && (
                         <button
                           className="primary"
@@ -852,11 +924,11 @@ function Room({
                     </div>
                   )}
                   {visibleHost &&
-                    s.current?.correct_answer &&
+                    s.current?.answer &&
                     s.phase !== "RESOLUTION" && (
                       <details>
                         <summary>للمقدم فقط: الإجابة الصحيحة</summary>
-                        {s.current.correct_answer}
+                        {s.current.answer}
                       </details>
                     )}
                 </>

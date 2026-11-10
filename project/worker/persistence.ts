@@ -8,6 +8,8 @@ export interface RoomEvent {
   at: number;
 }
 export interface RoomRecord {
+  schemaVersion: 2;
+  categoryIds: string[];
   members?: {
     id: string;
     name: string;
@@ -36,8 +38,8 @@ export async function saveRoomToD1(
   statements.push(
     db
       .prepare(
-        `INSERT INTO game_rooms(code,mode,status,revision,paused,created_at,updated_at,expires_at,winner,current_phase,current_round,current_turn,deadline,state_json,questions_snapshot_json)
- VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(code) DO UPDATE SET status=excluded.status,revision=excluded.revision,paused=excluded.paused,updated_at=excluded.updated_at,expires_at=excluded.expires_at,winner=excluded.winner,current_phase=excluded.current_phase,current_round=excluded.current_round,current_turn=excluded.current_turn,deadline=excluded.deadline,state_json=excluded.state_json WHERE excluded.revision>=game_rooms.revision`,
+        `INSERT INTO game_rooms(code,mode,status,revision,paused,created_at,updated_at,expires_at,winner,current_phase,current_round,current_turn,deadline,state_json,questions_snapshot_json,schema_version,category_ids_json)
+ VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(code) DO UPDATE SET status=excluded.status,revision=excluded.revision,paused=excluded.paused,updated_at=excluded.updated_at,expires_at=excluded.expires_at,winner=excluded.winner,current_phase=excluded.current_phase,current_round=excluded.current_round,current_turn=excluded.current_turn,deadline=excluded.deadline,state_json=excluded.state_json,schema_version=excluded.schema_version,category_ids_json=excluded.category_ids_json WHERE excluded.revision>=game_rooms.revision`,
       )
       .bind(
         s.code,
@@ -55,6 +57,8 @@ export async function saveRoomToD1(
         game?.deadline ?? null,
         JSON.stringify(game),
         JSON.stringify(s.questions),
+        s.schemaVersion,
+        JSON.stringify(s.categoryIds),
       ),
   );
   for (const [index, team] of (["red", "blue"] as const).entries()) {

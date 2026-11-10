@@ -1,8 +1,9 @@
+import { selection } from "./catalog.ts";
 import type { GameState, Question, TeamId, GameAction } from "./engine.ts";
 export type Role = "host" | "red" | "blue" | "viewer";
 export type Mode = "single" | "phones";
-export type PublicQuestion = Omit<Question, "correct_answer" | "quick_fact"> &
-  Partial<Pick<Question, "correct_answer" | "quick_fact">>;
+export type PublicQuestion = Omit<Question, "answer" | "hint"> &
+  Partial<Pick<Question, "answer" | "hint">>;
 export type PublicGame = Omit<
   GameState,
   "cells" | "current" | "sudden" | "seed"
@@ -10,7 +11,7 @@ export type PublicGame = Omit<
   cells: {
     id: string;
     category: string;
-    points: 100 | 200 | 300;
+    points: 200 | 400 | 600;
     status: "available" | "active" | "exhausted";
   }[];
   current: PublicQuestion | null;
@@ -22,6 +23,7 @@ export interface ParticipantView {
   connected: boolean;
 }
 export interface RoomView {
+  categoryIds: string[];
   hostTeam: TeamId | null;
   participants: ParticipantView[];
   code: string;
@@ -36,6 +38,7 @@ export interface RoomView {
 }
 export type RoomCommand =
   | { type: "START" }
+  | { type: "SET_CATEGORIES"; categoryIds: string[] }
   | { type: "SET_HOST_TEAM"; team: TeamId | null }
   | { type: "ASSIGN_CAPTAIN"; team: TeamId; memberId: string }
   | { type: "PAUSE"; paused: boolean }
@@ -50,6 +53,7 @@ export function allowed(
   if (
     [
       "START",
+      "SET_CATEGORIES",
       "SET_HOST_TEAM",
       "ASSIGN_CAPTAIN",
       "PAUSE",
@@ -79,8 +83,8 @@ export function project(
     game.phase === "FINISHED";
   let question: PublicQuestion | null = null;
   if (current && (game.phase !== "PREPARE" || (role === "host" && !hostTeam))) {
-    const { correct_answer, quick_fact, ...safe } = current;
-    question = reveal ? { ...safe, correct_answer, quick_fact } : safe;
+    const { answer, hint, ...safe } = current;
+    question = reveal ? { ...safe, answer, hint } : safe;
   }
   return {
     ...rest,
@@ -98,6 +102,13 @@ export function validCommand(v: unknown): v is RoomCommand {
   const a = v as Record<string, unknown>;
   const team = a.team === "red" || a.team === "blue";
   switch (a.type) {
+    case "SET_CATEGORIES":
+      try {
+        selection(a.categoryIds);
+        return true;
+      } catch {
+        return false;
+      }
     case "START":
     case "REVEAL_QUESTION":
     case "RESOLVE_ROUND":
