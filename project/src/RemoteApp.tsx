@@ -762,7 +762,7 @@ function Room({
                       s.phase,
                     ) && (
                       <button
-                        className="primary"
+                        className="primary answer-submit"
                         disabled={selected === null}
                         onClick={() => {
                           if (selected !== null)
