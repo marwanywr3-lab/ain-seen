@@ -8,6 +8,17 @@ const q = parseQuestions(
     readFileSync(new URL("../src/questions.json", import.meta.url), "utf8"),
   ),
 );
+test("only host can configure valid turn durations", () => {
+  for (const seconds of [20, 65, 120]) {
+    const command = { type: "SET_TURN_SECONDS", seconds } as const;
+    assert.equal(validCommand(command), true);
+    assert.equal(allowed("host", "phones", command), true);
+    for (const role of ["red", "blue", "viewer"] as const)
+      assert.equal(allowed(role, "phones", command), false);
+  }
+  for (const seconds of [19, 121, 30.5, "60", null])
+    assert.equal(validCommand({ type: "SET_TURN_SECONDS", seconds }), false);
+});
 test("captains cannot act for rivals or control host transitions", () => {
   assert.equal(
     allowed("red", "phones", { type: "SUBMIT_ANSWER", team: "blue", index: 0 }),
@@ -89,9 +100,6 @@ test("host player controls own team only and never sees unrevealed answers", () 
   );
   assert.equal(project(state, "host", "red")!.current, null);
   state = transition(state, { type: "REVEAL_QUESTION" }, 0);
-  assert.equal(
-    project(state, "host", "red")!.current?.answer,
-    undefined,
-  );
+  assert.equal(project(state, "host", "red")!.current?.answer, undefined);
   assert.equal(project(state, "host", "red")!.current?.hint, undefined);
 });

@@ -55,6 +55,7 @@ export interface Cell {
   fallback: Question;
 }
 export interface GameState {
+  turnSeconds?: number;
   phase: Phase;
   teams: Record<TeamId, Team>;
   turn: TeamId;
@@ -134,7 +135,10 @@ export function createGame(
   names: [string, string],
   seed: number,
   categoryIds: string[] = defaultCategories,
+  turnSeconds = 20,
 ): GameState {
+  if (!Number.isInteger(turnSeconds) || turnSeconds < 20 || turnSeconds > 120)
+    throw Error("مدة الدور يجب أن تكون من ٢٠ إلى ١٢٠ ثانية");
   const selected = selection(categoryIds);
   const categories = selected.map((id) =>
     catalogCategories.find((c) => c.id === id)!,
@@ -187,6 +191,7 @@ export function createGame(
     doubleUsed: false,
   });
   return {
+    turnSeconds,
     phase: "BOARD",
     teams: { red: team("red", names[0]), blue: team("blue", names[1]) },
     turn: cursor % 2 ? "red" : "blue",
@@ -288,7 +293,7 @@ export function transition(
       break;
     case "REVEAL_QUESTION":
       if (s.phase !== "PREPARE") return state;
-      timed("MAIN", 20000);
+      timed("MAIN", (s.turnSeconds ?? 20) * 1000);
       break;
     case "USE_JOKER": {
       if (

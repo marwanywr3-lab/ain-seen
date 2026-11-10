@@ -141,7 +141,25 @@ try {
     200,
   );
   assert.deepEqual(host.categoryIds, ids);
+  assert.equal(
+    (await act(keys.red, { type: "SET_TURN_SECONDS", seconds: 120 })).status,
+    403,
+  );
+  assert.equal(
+    (await act(keys.host, { type: "SET_TURN_SECONDS", seconds: 121 })).status,
+    403,
+  );
+  assert.equal(
+    (await act(keys.host, { type: "SET_TURN_SECONDS", seconds: 120 })).status,
+    200,
+  );
+  assert.equal((await request(`/rooms/${code}`)).data.turnSeconds, 120);
   assert.equal((await act(keys.host, { type: "START" })).status, 200);
+  assert.equal(host.game.turnSeconds, 120);
+  assert.equal(
+    (await act(keys.host, { type: "SET_TURN_SECONDS", seconds: 20 })).status,
+    409,
+  );
   assert.equal(host.game.cells.length, 18);
   assert.equal(
     (await act(keys.host, { type: "SET_CATEGORIES", categoryIds: ids })).status,
@@ -177,6 +195,8 @@ try {
     200,
   );
   assert.equal((await act(keys.host, { type: "REVEAL_QUESTION" })).status, 200);
+  assert.ok(host.game.deadline - host.serverTime > 118000);
+  assert.ok(host.game.deadline - host.serverTime <= 120000);
   const view = (await request(`/rooms/${code}`, { key: keys[team] })).data;
   assert.equal("answer" in view.game.current, false);
   assert.equal("sudden" in view.game, false);
@@ -255,7 +275,9 @@ try {
     (await act(keys[team], { type: "USE_JOKER", team, card: "FREEZE" })).status,
     200,
   );
-  await new Promise((resolve) => setTimeout(resolve, 10300));
+  await new Promise((resolve) =>
+    setTimeout(resolve, Math.max(0, host.game.deadline - Date.now()) + 300),
+  );
   host = (await request(`/rooms/${code}`, { key: keys.host })).data;
   assert.equal(host.game.phase, "STEAL_BUZZ");
   const rejoined = await connect(code, keys[rival]);

@@ -41,6 +41,7 @@ interface Member {
   role: "red" | "blue" | "viewer";
 }
 interface Saved {
+  turnSeconds?: number;
   schemaVersion: 2;
   categoryIds: string[];
   hostTeam?: "red" | "blue" | null;
@@ -270,6 +271,7 @@ export class GameRoom extends DurableObject<Env> {
   private view(role: Role): RoomView {
     const s = this.saved!;
     return {
+      turnSeconds: s.turnSeconds ?? 20,
       participants: (s.members ?? []).map((m) => ({
         id: m.id,
         name: m.name,
@@ -453,7 +455,10 @@ export class GameRoom extends DurableObject<Env> {
         409,
       );
     const action = msg.action as RoomCommand;
-    if (action.type === "SET_CATEGORIES") {
+    if (action.type === "SET_TURN_SECONDS") {
+      if (s.game) return json({ error: "حدد مدة الدور قبل بدء المباراة" }, 409);
+      s.turnSeconds = action.seconds;
+    } else if (action.type === "SET_CATEGORIES") {
       if (s.game)
         return json({ error: "اختيار الفئات متاح قبل المباراة فقط" }, 409);
       const categoryIds = selection(action.categoryIds);
@@ -499,6 +504,7 @@ export class GameRoom extends DurableObject<Env> {
         s.names,
         crypto.getRandomValues(new Uint32Array(1))[0]!,
         s.categoryIds,
+        s.turnSeconds ?? 20,
       );
     } else if (action.type === "PAUSE") {
       if (s.game && s.game.phase !== "BOARD" && s.game.phase !== "RESOLUTION")

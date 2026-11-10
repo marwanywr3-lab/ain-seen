@@ -23,6 +23,7 @@ export interface ParticipantView {
   connected: boolean;
 }
 export interface RoomView {
+  turnSeconds?: number;
   categoryIds: string[];
   hostTeam: TeamId | null;
   participants: ParticipantView[];
@@ -37,6 +38,7 @@ export interface RoomView {
   presence: Record<Role, number>;
 }
 export type RoomCommand =
+  | { type: "SET_TURN_SECONDS"; seconds: number }
   | { type: "START" }
   | { type: "SET_CATEGORIES"; categoryIds: string[] }
   | { type: "SET_HOST_TEAM"; team: TeamId | null }
@@ -53,6 +55,7 @@ export function allowed(
   if (
     [
       "START",
+      "SET_TURN_SECONDS",
       "SET_CATEGORIES",
       "SET_HOST_TEAM",
       "ASSIGN_CAPTAIN",
@@ -102,6 +105,12 @@ export function validCommand(v: unknown): v is RoomCommand {
   const a = v as Record<string, unknown>;
   const team = a.team === "red" || a.team === "blue";
   switch (a.type) {
+    case "SET_TURN_SECONDS":
+      return (
+        Number.isInteger(a.seconds) &&
+        Number(a.seconds) >= 20 &&
+        Number(a.seconds) <= 120
+      );
     case "SET_CATEGORIES":
       try {
         selection(a.categoryIds);

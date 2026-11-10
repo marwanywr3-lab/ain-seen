@@ -1,6 +1,13 @@
 import { CategoryPicker } from "./CategoryPicker";
 import { categories, categoryFor } from "./catalog";
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { api, useServiceUrl, useRoom } from "./client";
 import type { Mode, Role, RoomCommand, RoomView } from "./protocol";
 import { other, type JokerCard, type TeamId } from "./engine";
@@ -9,6 +16,53 @@ import { create as createQR } from "qrcode";
 import { roomJoinUrl, readJoinCode } from "./room-links";
 const icon = new URL("../icon.png", import.meta.url).href,
   wordmark = new URL("../wordmark.png", import.meta.url).href;
+const ReducedMotion = createContext(false);
+function initialReducedMotion() {
+  try {
+    const saved = localStorage.getItem("ain-reduced-motion");
+    if (saved !== null) return saved === "true";
+  } catch {
+    /* Preferences still work when storage is unavailable. */
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+function TurnDuration({
+  value,
+  onChange,
+  disabled = false,
+}: {
+  value: number;
+  onChange: (seconds: number) => void;
+  disabled?: boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <label className="turn-duration">
+      <span>
+        مدة الدور: <output>{draft.toLocaleString("ar-SA")} ثانية</output>
+      </span>
+      <input
+        type="range"
+        min="20"
+        max="120"
+        step="1"
+        value={draft}
+        aria-label="مدة الدور بالثواني"
+        aria-valuetext={`${draft} ثانية`}
+        disabled={disabled}
+        onChange={(e) => setDraft(Number(e.target.value))}
+        onPointerUp={(e) => onChange(Number(e.currentTarget.value))}
+        onKeyUp={(e) => onChange(Number(e.currentTarget.value))}
+        onBlur={(e) => {
+          if (Number(e.currentTarget.value) !== value)
+            onChange(Number(e.currentTarget.value));
+        }}
+      />
+      <small>٢٠ ثانية — ١٢٠ ثانية · تُعتمد قبل بدء المباراة</small>
+    </label>
+  );
+}
 const cardNames: Record<JokerCard, string> = {
   FREEZE: "عين حارة",
   SWAP: "تثبيت المخ",
@@ -175,6 +229,16 @@ function LobbyMembers({
   );
 }
 export default function RemoteApp() {
+  const [reducedMotion, setReducedMotion] = useState(initialReducedMotion);
+  useEffect(() => {
+    document.documentElement.dataset.reducedMotion = String(reducedMotion);
+    try {
+      localStorage.setItem("ain-reduced-motion", String(reducedMotion));
+    } catch {
+      /* Optional storage. */
+    }
+    if (reducedMotion) setIntro(false);
+  }, [reducedMotion]);
   const { base, ready: serviceReady } = useServiceUrl();
   const [route, setRoute] = useState(location.hash);
   const [intro, setIntro] = useState(true);
@@ -241,12 +305,19 @@ export default function RemoteApp() {
     }
   };
   return (
-    <>
+    <ReducedMotion.Provider value={reducedMotion}>
       <header>
         <a href="#">
           <img src={wordmark} alt="عين سين" />
         </a>
         <nav>
+          <button
+            type="button"
+            aria-pressed={reducedMotion}
+            onClick={() => setReducedMotion(!reducedMotion)}
+          >
+            {reducedMotion ? "الحركات: متوقفة" : "إيقاف الحركات والأنيميشن"}
+          </button>
           <a href="./admin.html">بوابة الأسئلة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
@@ -386,7 +457,11 @@ export default function RemoteApp() {
             >
               فتح شاشة العرض
             </button>
-            <button className="replay-intro" onClick={() => setIntro(true)}>
+            <button
+              className="replay-intro"
+              disabled={reducedMotion}
+              onClick={() => setIntro(true)}
+            >
               إعادة عرض البداية
             </button>
             {error && (
@@ -411,8 +486,10 @@ export default function RemoteApp() {
         </main>
       )}
       <footer>عين سين · القرار للقائد، والمتعة للجميع.</footer>
-      {intro && <Animation kind="intro" onEnd={() => setIntro(false)} />}
-    </>
+      {intro && !reducedMotion && (
+        <Animation kind="intro" onEnd={() => setIntro(false)} />
+      )}
+    </ReducedMotion.Provider>
   );
 }
 function Room({
@@ -424,6 +501,7 @@ function Room({
   code: string;
   sessionKey: string;
 }) {
+  const reducedMotion = useContext(ReducedMotion);
   const {
     room: r,
     connected,
@@ -444,6 +522,11 @@ function Room({
   useEffect(() => {
     if (!s) return;
     setSelected(null);
+    if (reducedMotion) {
+      setAnimation(null);
+      setPrevious({ phase: s.phase, round: s.round });
+      return;
+    }
     if (previous) {
       if (
         s.phase === "BOARD" &&
@@ -454,7 +537,7 @@ function Room({
         setAnimation("end");
     } else if (s.phase === "BOARD") setAnimation("match");
     setPrevious({ phase: s.phase, round: s.round });
-  }, [s?.phase, s?.round]);
+  }, [s?.phase, s?.round, reducedMotion]);
   useEffect(() => setSelected(null), [s?.current?.id]);
   if (!r)
     return (
@@ -509,6 +592,18 @@ function Room({
       )}
       {!s && host && (
         <>
+          <section className="panel">
+            <h2>إعدادات المباراة</h2>
+            <TurnDuration
+              value={r.turnSeconds ?? 20}
+              disabled={!connected}
+              onChange={(seconds) => {
+                if (seconds !== (r.turnSeconds ?? 20))
+                  command({ type: "SET_TURN_SECONDS", seconds });
+              }}
+            />
+            <p>مدة الخطف والفاصل تبقى كما هي.</p>
+          </section>
           <CategoryPicker
             value={chosen}
             onChange={setCategoryDraft}
@@ -530,6 +625,9 @@ function Room({
       {!s && !host && (
         <section className="panel">
           <h2>فئات المباراة · ١٨ سؤالًا</h2>
+          <p>
+            مدة الدور: {(r.turnSeconds ?? 20).toLocaleString("ar-SA")} ثانية
+          </p>
           <div className="selected-categories">
             {r.categoryIds.map((id) => {
               const c = categories.find((c) => c.id === id)!;
@@ -782,7 +880,7 @@ function Room({
                       <div className="track">
                         <i
                           style={{
-                            width: `${Math.min(100, (remaining / (s.phase === "MAIN" ? 20000 : s.phase === "SUDDEN_ANSWER" ? 5000 : 7000)) * 100)}%`,
+                            width: `${Math.min(100, (remaining / (s.phase === "MAIN" ? (s.turnSeconds ?? 20) * 1000 : s.phase === "SUDDEN_ANSWER" ? 5000 : 7000)) * 100)}%`,
                           }}
                         />
                       </div>
@@ -951,7 +1049,7 @@ function Room({
           )}
         </>
       )}
-      {animation && s && (
+      {animation && s && !reducedMotion && (
         <Animation
           kind={animation}
           name={s.teams[s.turn].name}

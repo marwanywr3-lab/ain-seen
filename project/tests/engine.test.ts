@@ -15,6 +15,36 @@ const questions = parseQuestions(
   ),
 );
 const game = () => createGame(questions, ["أحمر", "أزرق"], 42);
+test("custom turn duration controls server deadline and survives freeze and swap", () => {
+  for (const seconds of [20, 65, 120]) {
+    let s = createGame(questions, ["أحمر", "أزرق"], 42, undefined, seconds);
+    s = transition(
+      s,
+      { type: "SELECT_CELL", team: s.turn, cellId: s.cells[0]!.id },
+      1000,
+    );
+    s = transition(s, { type: "REVEAL_QUESTION" }, 1000);
+    assert.equal(s.deadline, 1000 + seconds * 1000);
+    s = transition(s, { type: "USE_JOKER", team: s.turn, card: "SWAP" }, 2000);
+    assert.equal(s.deadline, 1000 + seconds * 1000);
+    s = transition(
+      s,
+      { type: "USE_JOKER", team: other(s.turn), card: "FREEZE" },
+      3000,
+    );
+    assert.equal(s.deadline, 3000 + (seconds * 1000 - 2000) / 2);
+    s = transition(
+      s,
+      { type: "EXPIRE_TIMER", timerId: s.timerId },
+      s.deadline!,
+    );
+    assert.equal(s.phase, "STEAL_BUZZ");
+  }
+  for (const seconds of [19, 121, 30.5, NaN])
+    assert.throws(() =>
+      createGame(questions, ["a", "b"], 42, undefined, seconds),
+    );
+});
 function main() {
   let s = game();
   s = transition(
