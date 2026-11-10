@@ -38,7 +38,7 @@
     }
   ],
   "vars": {
-    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io"
+    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io,https://ain-seen.marwanbarbood.com"
   },
   "account_id": "cce61ab85b01cefa97c4def39e73c5ff"
 }

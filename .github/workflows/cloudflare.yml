@@ -1,6 +1,10 @@
 name: Deploy Cloudflare and connect game
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - project/wrangler.jsonc
 permissions:
   contents: write
   pages: write
