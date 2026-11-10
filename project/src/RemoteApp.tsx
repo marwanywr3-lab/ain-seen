@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, useServiceUrl, useRoom } from "./client";
 import type { Mode, Role, RoomCommand, RoomView } from "./protocol";
 import { other, type JokerCard, type TeamId } from "./engine";
 import { Admin } from "./admin";
+import { create as createQR } from "qrcode";
+import { roomJoinUrl, readJoinCode } from "./room-links";
 const icon = new URL("../icon.png", import.meta.url).href,
   wordmark = new URL("../wordmark.png", import.meta.url).href;
 const cardNames: Record<JokerCard, string> = {
@@ -50,7 +52,11 @@ function Animation({
         <span aria-hidden="true" />
       ) : (
         <img
-          src={kind === "intro" ? icon : wordmark}
+          src={
+            kind === "intro"
+              ? new URL("../icon-animation.png", import.meta.url).href
+              : new URL("../wordmark-animation.png", import.meta.url).href
+          }
           alt="عين سين"
           loading="eager"
           onLoad={() => setReady(true)}
@@ -72,9 +78,33 @@ function Animation({
 }
 function RoomCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
+  const url = roomJoinUrl(location.href, code);
+  const qr = useMemo(
+    () => createQR(url, { errorCorrectionLevel: "M" }).modules,
+    [url],
+  );
+  const path = useMemo(() => {
+    let value = "";
+    for (let row = 0; row < qr.size; row++)
+      for (let col = 0; col < qr.size; col++)
+        if (qr.get(row, col)) value += `M${col + 4},${row + 4}h1v1h-1z`;
+    return value;
+  }, [qr]);
   return (
     <section className="room-code">
-      <span>رمز الغرفة — أرسله للمشاركين</span>
+      <span>امسح الرمز للانضمام واكتب اسمك فقط</span>
+      <a href={url} className="room-qr" aria-label="رابط الانضمام إلى الغرفة">
+        <svg
+          role="img"
+          aria-label={`QR للانضمام إلى الغرفة ${code}`}
+          viewBox={`0 0 ${qr.size + 8} ${qr.size + 8}`}
+          shapeRendering="crispEdges"
+        >
+          <rect width="100%" height="100%" fill="white" />
+          <path d={path} fill="#102039" />
+        </svg>
+      </a>
+      <span>أو أدخل رمز الغرفة يدويًا</span>
       <strong dir="ltr">{code}</strong>
       <button
         onClick={async () => {
@@ -151,7 +181,7 @@ export default function RemoteApp() {
     "الفريق الأزرق",
   ]);
   const [mode, setMode] = useState<Mode>("phones");
-  const [join, setJoin] = useState("");
+  const [join, setJoin] = useState(() => readJoinCode(location.hash));
   const [joinName, setJoinName] = useState("");
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
@@ -163,6 +193,10 @@ export default function RemoteApp() {
   }, []);
   const params = new URLSearchParams(route.slice(1));
   const code = params.get("room") || "";
+  const invitedCode = readJoinCode(route);
+  useEffect(() => {
+    if (invitedCode) setJoin(invitedCode);
+  }, [invitedCode]);
   const key =
     params.get("key") || sessionStorage.getItem(`ain-session-${code}`) || "";
   useEffect(() => {
@@ -216,6 +250,43 @@ export default function RemoteApp() {
       </header>
       {route === "#admin" ? (
         <Admin base={base} />
+      ) : invitedCode ? (
+        <main className="panel join-panel">
+          <h1>انضم للغرفة</h1>
+          <p>
+            رمز الغرفة: <b dir="ltr">{invitedCode}</b>
+          </p>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              void joinRoom();
+            }}
+          >
+            <label htmlFor="invited-name">اسمك</label>
+            <input
+              id="invited-name"
+              value={joinName}
+              onChange={(event) => setJoinName(event.target.value)}
+              maxLength={32}
+              autoComplete="nickname"
+              required
+              placeholder="اكتب اسمك"
+            />
+            <button
+              className="primary"
+              disabled={!serviceReady || creating || !joinName.trim()}
+              type="submit"
+            >
+              {creating ? "جارٍ الانضمام…" : "انضم للغرفة"}
+            </button>
+          </form>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <a href="#">الدخول برمز آخر</a>
+        </main>
       ) : code ? (
         <Room base={base} code={code} sessionKey={key} />
       ) : (
@@ -405,6 +476,12 @@ function Room({
           {error}
         </p>
       )}
+      {(host || r.role === "viewer") && (
+        <details className="room-invite" open={!s}>
+          <summary>دعوة المشاركين — QR ورمز الغرفة</summary>
+          <RoomCode code={code} />
+        </details>
+      )}
       {!s ? (
         <section className="panel">
           <h1>التحدي على وشك يبدأ</h1>
@@ -430,7 +507,6 @@ function Room({
                 المقدم حاضر دائمًا. في وضع الجوالات يلزم اتصال القائدين قبل
                 البداية.
               </p>
-              <RoomCode code={code} />
               <button
                 className="primary"
                 disabled={
@@ -765,7 +841,6 @@ function Room({
                   </p>
                 ))}
               </details>
-              <RoomCode code={code} />
             </>
           )}
         </>
