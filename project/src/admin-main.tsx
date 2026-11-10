@@ -1,14 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
 import { createRoot } from "react-dom/client";
 import { Admin } from "./admin";
-import { apiDefault } from "./client";
+import { useServiceUrl } from "./client";
 import "@fontsource/cairo/arabic-400.css";
 import "@fontsource/cairo/arabic-600.css";
 import "@fontsource/cairo/arabic-800.css";
 import "./style.css";
 const wordmark = new URL("../wordmark.png", import.meta.url).href;
 function Portal() {
-  const [base, setBase] = useState(apiDefault);
+  const { base } = useServiceUrl();
   return (
     <>
       <header>
@@ -17,20 +17,6 @@ function Portal() {
         </a>
         <a href="./">الرجوع للعبة</a>
       </header>
-      {!import.meta.env.VITE_API_URL && (
-        <label className="panel">
-          عنوان الخدمة
-          <input
-            type="url"
-            dir="ltr"
-            value={base}
-            onChange={(e) => {
-              setBase(e.target.value);
-              localStorage.setItem("ain-seen-api", e.target.value);
-            }}
-          />
-        </label>
-      )}
       <Admin base={base} />
     </>
   );

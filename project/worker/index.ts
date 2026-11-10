@@ -1,6 +1,7 @@
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { saveRoomToD1, removeRoomFromD1, type RoomEvent } from "./persistence";
 import { DurableObject } from "cloudflare:workers";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+
 import {
   createGame,
   parseQuestions,
@@ -171,11 +172,15 @@ export default {
       } else if (/^\/rooms\/[A-Z0-9]{8}(\/(ws|join))?$/.test(url.pathname)) {
         const code = url.pathname.split("/")[2]!;
         res = await env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(req);
-      } else if (url.pathname === "/admin/bank") {
-        if (!(await isAdmin(req, env)))
-          res = json({ error: "دخول الإدارة غير مصرح" }, 401);
-        else if (req.method === "GET") res = json(await bank(env));
+      } else if (["/bank", "/admin/bank"].includes(url.pathname)) {
+        if (req.method === "GET")
+          res = json({
+            ...(await bank(env)),
+            canEdit: await isAdmin(req, env),
+          });
         else if (req.method === "PUT") {
+          if (!(await isAdmin(req, env)))
+            return json({ error: "التعديل متاح لمسؤول الأسئلة فقط" }, 401);
           const v = (await body(req)) as Record<string, unknown>;
           const questions = parseQuestions(v.questions);
           if (

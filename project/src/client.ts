@@ -1,15 +1,42 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RoomView, RoomCommand } from "./protocol";
+import { readServiceUrl } from "./service-config";
 export const apiDefault =
-  import.meta.env.VITE_API_URL ||
-  localStorage.getItem("ain-seen-api") ||
-  (import.meta.env.DEV ? "/api" : "");
+  import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "/api" : "");
+export function useServiceUrl() {
+  const [base, setBase] = useState(apiDefault);
+  const [ready, setReady] = useState(Boolean(apiDefault));
+  useEffect(() => {
+    if (apiDefault) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    fetch(new URL("./config.json", document.baseURI), {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (r) => {
+        if (!r.ok) throw Error("No configuration");
+        return readServiceUrl(await r.json());
+      })
+      .then(setBase)
+      .catch(() => setBase(""))
+      .finally(() => {
+        clearTimeout(timeout);
+        setReady(true);
+      });
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
+  }, []);
+  return { base, ready };
+}
 export async function api<T>(
   base: string,
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
-  if (!base) throw Error("خدمة اللعب غير متاحة حاليًا. جرّب لاحقًا.");
+  if (!base) throw Error("خادم الغرف لم يُنشر أو لم يُربط بالموقع بعد.");
   const response = await fetch(base.replace(/\/$/, "") + path, {
     ...init,
     headers: { "Content-Type": "application/json", ...init.headers },

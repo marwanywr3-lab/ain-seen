@@ -250,7 +250,7 @@ try {
   const admin = await request("/admin/bank", { key: "local-test-only" });
   assert.equal(admin.status, 200);
   assert.equal(admin.data.questions.length, 120);
-  assert.equal((await request("/admin/bank")).status, 401);
+  assert.equal((await request("/bank")).status, 200);
   const put = await request("/admin/bank", {
     key: "local-test-only",
     method: "PUT",
@@ -266,6 +266,12 @@ try {
       })
     ).status,
     409,
+  );
+  const publicBank = await request("/bank");
+  assert.equal(publicBank.status, 200);
+  assert.equal(
+    (await request("/bank", { method: "PUT", data: publicBank.data })).status,
+    401,
   );
   const db = await mf.getD1Database("DB");
   const stored = await db

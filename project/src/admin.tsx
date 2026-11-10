@@ -5,6 +5,7 @@ interface Bank {
   questions: Question[];
   disabled: number[];
   revision: number;
+  canEdit?: boolean;
 }
 const blank: Question = {
   id: 0,
@@ -17,9 +18,6 @@ const blank: Question = {
   quick_fact: "",
 };
 export function Admin({ base }: { base: string }) {
-  const authHeaders: Record<string, string> = import.meta.env.DEV
-    ? { Authorization: "Bearer local-test-only" }
-    : {};
   const [bank, setBank] = useState<Bank | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -30,29 +28,45 @@ export function Admin({ base }: { base: string }) {
   const [saving, setSaving] = useState(false);
   const load = async () => {
     try {
-      setBank(
-        await api<Bank>(base, "/admin/bank", {
-          credentials: "include",
-          headers: authHeaders,
-        }),
-      );
+      if (base)
+        setBank(
+          await api<Bank>(base, "/bank", {
+            headers: import.meta.env.DEV
+              ? { Authorization: "Bearer local-test-only" }
+              : {},
+          }),
+        );
+      else {
+        const response = await fetch(
+          new URL("./questions.json", document.baseURI),
+        );
+        if (!response.ok) throw Error("تعذر تحميل الأسئلة");
+        setBank({
+          questions: parseQuestions(await response.json()),
+          disabled: [],
+          revision: 0,
+        });
+      }
       setError("");
     } catch (e) {
       setError((e as Error).message);
     }
   };
   useEffect(() => {
-    if (base) void load();
+    void load();
   }, [base]);
   const save = async (next: Bank) => {
     setSaving(true);
     setError("");
     try {
       parseQuestions(next.questions);
-      const res = await api<{ revision: number }>(base, "/admin/bank", {
+      const res = await api<{ revision: number }>(base, "/bank", {
         method: "PUT",
         credentials: "include",
-        headers: authHeaders,
+        headers: import.meta.env.DEV
+          ? { Authorization: "Bearer local-test-only" }
+          : {},
+
         body: JSON.stringify(next),
       });
       setBank({ ...next, revision: res.revision });
@@ -108,14 +122,20 @@ export function Admin({ base }: { base: string }) {
   return (
     <main>
       <section className="panel">
-        <span className="pill">إدارة خاصة</span>
+        <span className="pill">مفتوحة للجميع</span>
         <h1>بوابة الأسئلة</h1>
         {capacity && (
           <p className="error" role="alert">
             تنبيه توفر الأسئلة: {capacity}
           </p>
         )}
-        <p>إضافة وتعديل وتعطيل، دون تغيير المباريات الجارية.</p>
+        <p>تصفح الأسئلة والبحث والتصدير متاح للجميع. التعديل لمسؤول الأسئلة.</p>
+        {!base && (
+          <p className="note">
+            يمكنك تصفح الأسئلة وتصديرها الآن. حفظ التعديلات يتطلب اتصال خادم
+            اللعبة.
+          </p>
+        )}
         {error && (
           <p className="error" role="alert">
             {error}
@@ -124,13 +144,7 @@ export function Admin({ base }: { base: string }) {
         {notice && <p role="status">{notice}</p>}
         {!bank ? (
           <>
-            <p>
-              الدخول محمي بـCloudflare Access. افتح رابط تسجيل الدخول للخدمة، ثم
-              ارجع وحدّث المجموعة.
-            </p>
-            <a href={`${base}/admin/bank`} target="_blank" rel="noreferrer">
-              تسجيل دخول الإدارة
-            </a>
+            <p>الأسئلة متاحة للجميع دون تسجيل دخول.</p>
             <button onClick={() => void load()}>تحديث</button>
           </>
         ) : (
@@ -140,6 +154,7 @@ export function Admin({ base }: { base: string }) {
                 {bank.questions.length} سؤال · الإصدار {bank.revision}
               </b>
               <button
+                disabled={!bank.canEdit}
                 onClick={() =>
                   setEdit({
                     ...blank,
@@ -156,7 +171,7 @@ export function Admin({ base }: { base: string }) {
                 <input
                   type="file"
                   accept=".json"
-                  disabled={saving}
+                  disabled={saving || !base || !bank?.canEdit}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
                     if (f) void importBank(f);
@@ -307,7 +322,10 @@ export function Admin({ base }: { base: string }) {
                     }
                   />
                 </label>
-                <button className="primary" disabled={saving}>
+                <button
+                  className="primary"
+                  disabled={saving || !base || !bank?.canEdit}
+                >
                   حفظ السؤال
                 </button>
                 <button type="button" onClick={() => setEdit(null)}>
@@ -330,11 +348,14 @@ export function Admin({ base }: { base: string }) {
                     </span>
                     <h3>{q.question}</h3>
                     <p>{q.correct_answer}</p>
-                    <button onClick={() => setEdit(structuredClone(q))}>
+                    <button
+                      disabled={!bank.canEdit}
+                      onClick={() => setEdit(structuredClone(q))}
+                    >
                       تعديل ومعاينة
                     </button>
                     <button
-                      disabled={saving}
+                      disabled={saving || !base || !bank?.canEdit}
                       onClick={() =>
                         void save({
                           ...bank,

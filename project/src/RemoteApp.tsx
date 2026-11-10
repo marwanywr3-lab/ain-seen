@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { api, apiDefault, useRoom } from "./client";
+import { api, useServiceUrl, useRoom } from "./client";
 import type { Mode, Role, RoomCommand, RoomView } from "./protocol";
 import { other, type JokerCard, type TeamId } from "./engine";
 import { Admin } from "./admin";
@@ -29,7 +29,7 @@ function Animation({
     if (ready) return;
     const fallback = setTimeout(() => {
       setFailed(true);
-      setReady(true);
+      endRef.current();
     }, 5000);
     return () => clearTimeout(fallback);
   }, [ready]);
@@ -41,11 +41,13 @@ function Animation({
   return (
     <div
       className={`animation ${kind} ${ready ? "ready" : ""}`}
+      style={
+        !ready ? { visibility: "hidden", pointerEvents: "none" } : undefined
+      }
       aria-label="بداية عين سين"
     >
-      {!ready && <span className="logo-loading">عين سين</span>}
       {failed ? (
-        <h1 className="fallback-logo">عين سين</h1>
+        <span aria-hidden="true" />
       ) : (
         <img
           src={kind === "intro" ? icon : wordmark}
@@ -54,7 +56,7 @@ function Animation({
           onLoad={() => setReady(true)}
           onError={() => {
             setFailed(true);
-            setReady(true);
+            endRef.current();
           }}
           style={{ animationPlayState: ready ? "running" : "paused" }}
         />
@@ -141,7 +143,7 @@ function LobbyMembers({
   );
 }
 export default function RemoteApp() {
-  const [base] = useState(apiDefault);
+  const { base, ready: serviceReady } = useServiceUrl();
   const [route, setRoute] = useState(location.hash);
   const [intro, setIntro] = useState(true);
   const [names, setNames] = useState<[string, string]>([
@@ -261,7 +263,7 @@ export default function RemoteApp() {
             </label>
             <button
               className="primary"
-              disabled={creating}
+              disabled={creating || !serviceReady}
               onClick={() => void create()}
             >
               {creating ? "نجهز الغرفة…" : "أنشئ جلسة ←"}
@@ -289,7 +291,12 @@ export default function RemoteApp() {
               }
             />
             <button
-              disabled={join.length !== 8 || !joinName.trim() || creating}
+              disabled={
+                join.length !== 8 ||
+                !joinName.trim() ||
+                creating ||
+                !serviceReady
+              }
               onClick={() => {
                 void joinRoom();
               }}

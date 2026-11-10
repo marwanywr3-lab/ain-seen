@@ -38,9 +38,7 @@
     }
   ],
   "vars": {
-    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io",
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io"
   },
   "account_id": "cce61ab85b01cefa97c4def39e73c5ff"
 }
