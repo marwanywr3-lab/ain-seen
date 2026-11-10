@@ -22,6 +22,7 @@ export interface ParticipantView {
   connected: boolean;
 }
 export interface RoomView {
+  hostTeam: TeamId | null;
   participants: ParticipantView[];
   code: string;
   revision: number;
@@ -35,14 +36,21 @@ export interface RoomView {
 }
 export type RoomCommand =
   | { type: "START" }
+  | { type: "SET_HOST_TEAM"; team: TeamId | null }
   | { type: "ASSIGN_CAPTAIN"; team: TeamId; memberId: string }
   | { type: "PAUSE"; paused: boolean }
   | GameAction;
-export function allowed(role: Role, mode: Mode, command: RoomCommand): boolean {
+export function allowed(
+  role: Role,
+  mode: Mode,
+  command: RoomCommand,
+  hostTeam: TeamId | null = null,
+): boolean {
   if (role === "viewer") return false;
   if (
     [
       "START",
+      "SET_HOST_TEAM",
       "ASSIGN_CAPTAIN",
       "PAUSE",
       "REVEAL_QUESTION",
@@ -53,16 +61,24 @@ export function allowed(role: Role, mode: Mode, command: RoomCommand): boolean {
     return role === "host";
   if (command.type === "EXPIRE_TIMER") return false;
   if ("team" in command)
-    return mode === "single" ? role === "host" : role === command.team;
+    return mode === "single"
+      ? role === "host"
+      : role === command.team || (role === "host" && hostTeam === command.team);
   return false;
 }
-export function project(game: GameState | null, role: Role): PublicGame | null {
+export function project(
+  game: GameState | null,
+  role: Role,
+  hostTeam: TeamId | null = null,
+): PublicGame | null {
   if (!game) return null;
   const { cells, current, sudden: _sudden, seed: _seed, ...rest } = game;
   const reveal =
-    role === "host" || game.phase === "RESOLUTION" || game.phase === "FINISHED";
+    (role === "host" && !hostTeam) ||
+    game.phase === "RESOLUTION" ||
+    game.phase === "FINISHED";
   let question: PublicQuestion | null = null;
-  if (current && (game.phase !== "PREPARE" || role === "host")) {
+  if (current && (game.phase !== "PREPARE" || (role === "host" && !hostTeam))) {
     const { correct_answer, quick_fact, ...safe } = current;
     question = reveal ? { ...safe, correct_answer, quick_fact } : safe;
   }
@@ -87,6 +103,8 @@ export function validCommand(v: unknown): v is RoomCommand {
     case "RESOLVE_ROUND":
     case "END_MATCH":
       return true;
+    case "SET_HOST_TEAM":
+      return team || a.team === null;
     case "ASSIGN_CAPTAIN":
       return team && typeof a.memberId === "string" && a.memberId.length <= 80;
     case "PAUSE":

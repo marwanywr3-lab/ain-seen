@@ -8,7 +8,7 @@
     "build": "tsc && vite build --base=./",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "check": "tsc && tsc -p worker/tsconfig.json",
-    "integration": "node tests/integration.mjs",
+    "integration": "npm run worker:build && node tests/integration.mjs",
     "worker:build": "wrangler deploy --dry-run --outdir .worker-build",
     "deploy": "node scripts/deploy.mjs"
   },

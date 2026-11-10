@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - project/wrangler.jsonc
+      - project/worker/**
+      - project/src/engine.ts
+      - project/src/protocol.ts
 permissions:
   contents: write
   pages: write

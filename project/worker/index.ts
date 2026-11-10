@@ -40,6 +40,7 @@ interface Member {
   role: "red" | "blue" | "viewer";
 }
 interface Saved {
+  hostTeam?: "red" | "blue" | null;
   members?: Member[];
   createdAt?: number;
   events?: RoomEvent[];
@@ -253,6 +254,7 @@ export class GameRoom extends DurableObject<Env> {
       const a = ws.deserializeAttachment() as { role?: Role } | null;
       if (a?.role) count[a.role]++;
     }
+    if (this.saved?.hostTeam) count[this.saved.hostTeam] += count.host;
     return count;
   }
   private view(role: Role): RoomView {
@@ -270,12 +272,13 @@ export class GameRoom extends DurableObject<Env> {
                 ?.memberId === m.id,
           ),
       })),
+      hostTeam: s.hostTeam ?? null,
       code: s.code,
       revision: s.revision,
       mode: s.mode,
       names: s.names,
       role,
-      game: project(s.game, role),
+      game: project(s.game, role, s.hostTeam),
       paused: s.paused,
       serverTime: Date.now(),
       presence: this.presence(),
@@ -416,7 +419,10 @@ export class GameRoom extends DurableObject<Env> {
   }
   private async command(role: Role, msg: Record<string, unknown>) {
     const s = this.saved!;
-    if (!validCommand(msg.action) || !allowed(role, s.mode, msg.action))
+    if (
+      !validCommand(msg.action) ||
+      !allowed(role, s.mode, msg.action, s.hostTeam)
+    )
       return json({ error: "الإجراء غير مسموح" }, 403);
     if (
       typeof msg.id !== "string" ||
@@ -432,7 +438,19 @@ export class GameRoom extends DurableObject<Env> {
         409,
       );
     const action = msg.action as RoomCommand;
-    if (action.type === "ASSIGN_CAPTAIN") {
+    if (action.type === "SET_HOST_TEAM") {
+      if (s.game)
+        return json({ error: "حدد مشاركة المقدم قبل بداية المباراة" }, 409);
+      s.hostTeam = action.team;
+      if (action.team) {
+        for (const m of s.members ?? [])
+          if (m.role === action.team) m.role = "viewer";
+        s.keys[action.team] = token();
+        this.refreshRoles();
+      }
+    } else if (action.type === "ASSIGN_CAPTAIN") {
+      if (s.hostTeam === action.team)
+        return json({ error: "المقدم هو قائد هذا الفريق" }, 409);
       if (
         s.mode !== "phones" ||
         (s.game && !["BOARD", "RESOLUTION"].includes(s.game.phase))

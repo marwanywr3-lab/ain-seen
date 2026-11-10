@@ -57,3 +57,41 @@ test("wire validation rejects timer injection and invalid team/index/card", () =
     false,
   );
 });
+test("host player controls own team only and never sees unrevealed answers", () => {
+  assert.equal(
+    allowed("host", "phones", { type: "BUZZ_STEAL", team: "red" }, "red"),
+    true,
+  );
+  assert.equal(
+    allowed(
+      "host",
+      "phones",
+      { type: "SUBMIT_ANSWER", team: "blue", index: 0 },
+      "red",
+    ),
+    false,
+  );
+  assert.equal(
+    allowed("host", "phones", { type: "REVEAL_QUESTION" }, "red"),
+    true,
+  );
+  assert.equal(
+    allowed("red", "phones", { type: "SET_HOST_TEAM", team: "red" }),
+    false,
+  );
+  assert.equal(validCommand({ type: "SET_HOST_TEAM", team: null }), true);
+  assert.equal(validCommand({ type: "SET_HOST_TEAM", team: "viewer" }), false);
+  let state = createGame(q, ["a", "b"], 1);
+  state = transition(
+    state,
+    { type: "SELECT_CELL", team: state.turn, cellId: state.cells[0]!.id },
+    0,
+  );
+  assert.equal(project(state, "host", "red")!.current, null);
+  state = transition(state, { type: "REVEAL_QUESTION" }, 0);
+  assert.equal(
+    project(state, "host", "red")!.current?.correct_answer,
+    undefined,
+  );
+  assert.equal(project(state, "host", "red")!.current?.quick_fact, undefined);
+});

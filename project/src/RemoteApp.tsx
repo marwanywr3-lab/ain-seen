@@ -157,7 +157,7 @@ function LobbyMembers({
                 <button
                   key={team}
                   className={team}
-                  disabled={p.role === team}
+                  disabled={p.role === team || room.hostTeam === team}
                   onClick={() =>
                     send({ type: "ASSIGN_CAPTAIN", team, memberId: p.id })
                   }
@@ -447,7 +447,11 @@ function Room({
       </main>
     );
   const can = (team: TeamId) =>
-    connected && !r.paused && (r.mode === "single" ? host : r.role === team);
+    connected &&
+    !r.paused &&
+    (r.mode === "single"
+      ? host
+      : r.role === team || (host && r.hostTeam === team));
   const command = (a: RoomCommand) => {
     if (connected) void send(a);
   };
@@ -481,6 +485,36 @@ function Room({
           <summary>دعوة المشاركين — QR ورمز الغرفة</summary>
           <RoomCode code={code} />
         </details>
+      )}
+      {!s && host && (
+        <section className="panel host-player">
+          <h2>مشاركة المقدم</h2>
+          <label htmlFor="host-team">هل تشارك كلاعب؟</label>
+          <select
+            id="host-team"
+            value={r.hostTeam ?? ""}
+            disabled={!connected}
+            onChange={(event) =>
+              command({
+                type: "SET_HOST_TEAM",
+                team: (event.target.value || null) as TeamId | null,
+              })
+            }
+          >
+            <option value="">مقدم فقط</option>
+            <option value="red">مقدم وقائد {r.names[0]}</option>
+            <option value="blue">مقدم وقائد {r.names[1]}</option>
+          </select>
+          <p>
+            تحتفظ بأدوات التقديم. عند المشاركة تُخفى عنك الإجابة الصحيحة حتى
+            انتهاء السؤال، ويُثبت اختيارك عند بداية المباراة.
+          </p>
+        </section>
+      )}
+      {r.hostTeam && (
+        <p className={`pill ${r.hostTeam}`}>
+          المقدم مشارك وقائد {r.names[r.hostTeam === "red" ? 0 : 1]}
+        </p>
       )}
       {!s ? (
         <section className="panel">

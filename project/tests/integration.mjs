@@ -331,6 +331,115 @@ try {
         !Object.values(keys).includes(s.credential_hash),
     ),
   );
+  {
+    const dual = (
+      await request("/rooms", {
+        method: "POST",
+        data: { names: ["مقدم لاعب", "منافس"], mode: "phones" },
+      })
+    ).data;
+    const dualCode = dual.code,
+      dualKey = dual.keys.host;
+    const rival = (
+      await request(`/rooms/${dualCode}/join`, {
+        method: "POST",
+        data: { name: "القائد المنافس" },
+      })
+    ).data;
+    for (const key of [dualKey, rival.key])
+      sockets.push((await connect(dualCode, key)).ws);
+    const dualAction = async (key, action) => {
+      const state = (await request(`/rooms/${dualCode}`, { key: dualKey }))
+        .data;
+      return request(`/rooms/${dualCode}`, {
+        key,
+        method: "POST",
+        data: { action, revision: state.revision, id: crypto.randomUUID() },
+      });
+    };
+    assert.equal(
+      (await dualAction(rival.key, { type: "SET_HOST_TEAM", team: "red" }))
+        .status,
+      403,
+    );
+    assert.equal(
+      (await dualAction(dualKey, { type: "SET_HOST_TEAM", team: "red" }))
+        .status,
+      200,
+    );
+    assert.equal(
+      (
+        await dualAction(dualKey, {
+          type: "ASSIGN_CAPTAIN",
+          team: "red",
+          memberId: rival.memberId,
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (
+        await dualAction(dualKey, {
+          type: "ASSIGN_CAPTAIN",
+          team: "blue",
+          memberId: rival.memberId,
+        })
+      ).status,
+      200,
+    );
+    let dualState = (await request(`/rooms/${dualCode}`, { key: dualKey }))
+      .data;
+    assert.equal(dualState.hostTeam, "red");
+    assert.ok(dualState.presence.red && dualState.presence.blue);
+    assert.equal((await dualAction(dualKey, { type: "START" })).status, 200);
+    assert.equal(
+      (await dualAction(dualKey, { type: "SET_HOST_TEAM", team: null })).status,
+      409,
+    );
+    dualState = (await request(`/rooms/${dualCode}`, { key: dualKey })).data;
+    const turn = dualState.game.turn;
+    assert.equal(
+      (
+        await dualAction(turn === "red" ? dualKey : rival.key, {
+          type: "SELECT_CELL",
+          team: turn,
+          cellId: dualState.game.cells[0].id,
+        })
+      ).status,
+      200,
+    );
+    dualState = (await request(`/rooms/${dualCode}`, { key: dualKey })).data;
+    assert.equal(dualState.game.current, null);
+    assert.equal(
+      (await dualAction(dualKey, { type: "REVEAL_QUESTION" })).status,
+      200,
+    );
+    dualState = (await request(`/rooms/${dualCode}`, { key: dualKey })).data;
+    assert.equal(dualState.game.current.correct_answer, undefined);
+    assert.equal(
+      (
+        await dualAction(dualKey, {
+          type: "SUBMIT_ANSWER",
+          team: "blue",
+          index: 0,
+        })
+      ).status,
+      403,
+    );
+    assert.equal(
+      (
+        await dualAction(turn === "red" ? dualKey : rival.key, {
+          type: "SUBMIT_ANSWER",
+          team: turn,
+          index: 0,
+        })
+      ).status,
+      200,
+    );
+    console.log(
+      "PASS: host player assignment, captain exclusion, dual presence, match start, locked role, answer secrecy and team-only answer permissions",
+    );
+  }
   console.log(
     "PASS: real Worker/D1/DO/WebSocket integration, role enforcement, secret redaction, scoring, atomic duplicate buzzer, pause, actual timer alarm, reconnect, admin revision guard, and D1 storage plus code-based joining and host captain assignment",
   );
