@@ -1,4 +1,5 @@
 import { GameBoard } from "./GameBoard";
+import { FinishScreen } from "./FinishScreen";
 import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
 import { categories, categoryFor } from "./catalog";
@@ -242,7 +243,7 @@ export default function RemoteApp() {
   }, [reducedMotion]);
   const { base, ready: serviceReady } = useServiceUrl();
   const [route, setRoute] = useState(location.hash);
-  const [intro, setIntro] = useState(true);
+  const [intro, setIntro] = useState(false);
   const [names, setNames] = useState<[string, string]>([
     "الفريق الأحمر",
     "الفريق الأزرق",
@@ -308,7 +309,8 @@ export default function RemoteApp() {
   return (
     <ReducedMotion.Provider value={reducedMotion}>
       <header>
-        <a href="#">
+        <a className="header-brand" href="#">
+          <img className="header-symbol" src="./redesign/brand/symbol.svg" alt="" />
           <img src={wordmark} alt="عين سين" />
         </a>
         <nav>
@@ -319,9 +321,8 @@ export default function RemoteApp() {
           >
             {reducedMotion ? "الحركات: متوقفة" : "إيقاف الحركات والأنيميشن"}
           </button>
-          <a href="#offline">أوفلاين · شاشة واحدة</a>
           <a href="#how-to-play">طريقة اللعب</a>
-          <a href="./admin.html">بوابة الأسئلة</a>
+          <a href="#about">عن اللعبة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
       </header>
@@ -375,6 +376,7 @@ export default function RemoteApp() {
               <h1><picture><source media="(max-width: 550px)" srcSet="./redesign/brand/wordmark-nav.svg" /><img className="hero-wordmark" src="./redesign/brand/wordmark-hero.svg" alt="عين سين" /></picture></h1>
               <p>لعبة أسئلة ثقافية واجتماعية ممتعة<br /> للعب مع الأصدقاء والعائلة</p>
               <a className="hero-action" href="#categories">ابدأ التحدي</a>
+              <a className="offline-action" href="#offline">العب أوفلاين</a>
             </div>
           </section>
           <section className="panel">
@@ -456,13 +458,6 @@ export default function RemoteApp() {
             >
               فتح شاشة العرض
             </button>
-            <button
-              className="replay-intro"
-              disabled={reducedMotion}
-              onClick={() => setIntro(true)}
-            >
-              إعادة عرض البداية
-            </button>
             {error && (
               <p className="error" role="alert">
                 {error}
@@ -483,6 +478,7 @@ export default function RemoteApp() {
             </button>
           </CategoryPicker>
           <section className="how-to-play panel" id="how-to-play"><h2>طريقة اللعب</h2><p>اختاروا ٦ فئات، وجهّزوا فريقين ومقدمًا، وتنافسوا على ٣٦ سؤالًا بقيم ٢٠٠ و٤٠٠ و٦٠٠. استخدموا وسائل المساعدة واحذروا الخطف!</p><a href="#offline">العب على شاشة واحدة دون إنترنت</a></section>
+          <section className="about-game panel" id="about"><h2>عن لعبة عين سين 🎮</h2><p><b>عين سين</b> لعبة مسابقات وتحديات جماعية، تجمع بين المتعة والحماس والمنافسة في أجواء مليئة بالتحدي والضحك!</p><p>اختبر معلوماتك، وتحدَّ أصدقاءك وعائلتك في مجموعة متنوعة من الفئات والأسئلة، واجمع النقاط لتثبت أن فريقك هو الأفضل!</p><p>صُممت عين سين لتكون تجربة ترفيهية سهلة وممتعة، تناسب الجلسات العائلية وجمعات الأصدقاء.</p><h3>👨‍💻 عن المطور</h3><p>تم تطوير وتصميم لعبة <b>عين سين</b> بواسطة <b>مروان باربود (Marwan Barbood)</b>.</p><p>الهدف من اللعبة هو تقديم تجربة عربية ممتعة تجمع الأصدقاء والعائلة بروح المنافسة والتحدي.</p><h3>🚀 جاهز للتحدي؟</h3><p>اجمع فريقك، واختر فئاتك المفضلة، وابدأ المنافسة الآن!</p><p><b>جرّب عين سين اليوم، واكتشف من هو صاحب المعلومات الأقوى بينكم! 🏆</b></p><p><b>تطوير وتصميم: مروان باربود</b><br /><i>صُنعت بشغف، لتُلعب بمتعة. ❤️</i></p></section>
         </main>
       )}
       <footer>عين سين · القرار للقائد، والمتعة للجميع.</footer>
@@ -527,15 +523,7 @@ function Room({
       setPrevious({ phase: s.phase, round: s.round });
       return;
     }
-    if (previous) {
-      if (
-        s.phase === "BOARD" &&
-        (previous.phase !== "BOARD" || previous.round !== s.round)
-      )
-        setAnimation("turn");
-      if (s.phase === "FINISHED" && previous.phase !== "FINISHED")
-        setAnimation("end");
-    } else if (s.phase === "BOARD") setAnimation("match");
+    setAnimation(null);
     setPrevious({ phase: s.phase, round: s.round });
   }, [s?.phase, s?.round, reducedMotion]);
   useEffect(() => setSelected(null), [s?.current?.id]);
@@ -775,26 +763,7 @@ function Room({
               }
             />
           ) : s.phase === "FINISHED" ? (
-            <section className="panel finish">
-              <span className="pill">ختام القيم</span>
-              <h1>
-                {s.winner
-                  ? `الفائز: ${s.teams[s.winner].name}`
-                  : "انتهت المباراة"}
-              </h1>
-              <p>{s.result}</p>
-              {(["red", "blue"] as TeamId[])
-                .sort((a, b) => s.teams[b].score - s.teams[a].score)
-                .map((team) => (
-                  <div className={`final-row ${team}`} key={team}>
-                    <b>{s.teams[team].name}</b>
-                    <strong>
-                      {s.teams[team].score.toLocaleString("ar-SA")} نقطة
-                    </strong>
-                  </div>
-                ))}
-              <a href="#">جلسة جديدة</a>
-            </section>
+            <FinishScreen game={s} onReplay={() => { location.hash = ""; }} />
           ) : (
             <section className="question panel">
               <div className="question-top">

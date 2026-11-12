@@ -4,6 +4,7 @@ import { CategoryPicker } from "./CategoryPicker";
 import { categoryFor } from "./catalog";
 import { createGame, parseQuestions, type GameAction, other } from "./engine";
 import { useAinSeenEngine } from "./useAinSeenEngine";
+import { FinishScreen } from "./FinishScreen";
 
 const teamColors = [
   { name: "أحمر", value: "#bd3540" },
@@ -161,12 +162,7 @@ export function OfflineApp() {
               }
             />
           ) : s.phase === "FINISHED" ? (
-            <section className="panel">
-              <h2>
-                {s.winner ? `الفائز: ${s.teams[s.winner].name}` : "انتهى القيم"}
-              </h2>
-              <button onClick={reset}>مباراة جديدة</button>
-            </section>
+            <FinishScreen game={s} onReplay={reset} />
           ) : (
             <section className="panel question">
               {s.phase === "PREPARE" ? (
