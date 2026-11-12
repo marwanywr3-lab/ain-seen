@@ -5,6 +5,15 @@ import { categoryFor } from "./catalog";
 import { createGame, parseQuestions, type GameAction, other } from "./engine";
 import { useAinSeenEngine } from "./useAinSeenEngine";
 
+const teamColors = [
+  { name: "أحمر", value: "#bd3540" },
+  { name: "أزرق", value: "#205cb5" },
+  { name: "أخضر", value: "#18704e" },
+  { name: "بنفسجي", value: "#7146a3" },
+  { name: "برتقالي", value: "#a94d12" },
+  { name: "كحلي", value: "#273b68" },
+];
+
 export function OfflineApp() {
   const { state: s, start, reset, dispatch, remaining } = useAinSeenEngine();
   const [names, setNames] = useState<[string, string]>([
@@ -12,6 +21,7 @@ export function OfflineApp() {
     "الفريق الأزرق",
   ]);
   const [ids, setIds] = useState<string[]>([]);
+  const [colors, setColors] = useState<[string, string]>(["#bd3540", "#205cb5"]);
   const [seconds, setSeconds] = useState(20);
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
@@ -71,7 +81,8 @@ export function OfflineApp() {
           <section className="panel">
             <h2>جهّز القيم</h2>
             {names.map((name, i) => (
-              <label key={i}>
+              <div className="team-setup" key={i}>
+              <label>
                 اسم الفريق {i + 1}
                 <input
                   maxLength={32}
@@ -85,6 +96,14 @@ export function OfflineApp() {
                   }
                 />
               </label>
+              <label>
+                لون الفريق {i + 1}
+                <select value={colors[i]} onChange={(e) => setColors(i === 0 ? [e.target.value, colors[1]] : [colors[0], e.target.value])}>
+                  {teamColors.map((color) => <option key={color.value} value={color.value}>{color.name}</option>)}
+                </select>
+              </label>
+              <span className="team-color-preview" style={{ backgroundColor: colors[i] }} aria-hidden="true" />
+              </div>
             ))}
             <label>
               مدة الدور: {seconds} ثانية
@@ -117,8 +136,8 @@ export function OfflineApp() {
       ) : (
         <>
           <div className="scores">
-            {(["red", "blue"] as const).map((t) => (
-              <section className={`score ${t}`} key={t}>
+            {(["red", "blue"] as const).map((t, i) => (
+              <section className={`score ${t}`} style={{ backgroundColor: colors[i], color: "#fff" }} key={t}>
                 <b>{s.teams[t].name}</b>
                 <strong>{s.teams[t].score}</strong>
               </section>
