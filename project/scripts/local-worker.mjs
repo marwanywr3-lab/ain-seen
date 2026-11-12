@@ -29,6 +29,7 @@ for (const file of [
   "0002_rooms_and_matches.sql",
   "0003_room_members.sql",
   "0004_catalog_v2.sql",
+  "0005_catalog_v3.sql",
 ]) {
   for (const statement of sqlStatements(
     await readFile(`migrations/${file}`, "utf8"),

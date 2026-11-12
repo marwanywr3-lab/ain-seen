@@ -42,7 +42,7 @@ interface Member {
 }
 interface Saved {
   turnSeconds?: number;
-  schemaVersion: 2;
+  schemaVersion: 3;
   categoryIds: string[];
   hostTeam?: "red" | "blue" | null;
   members?: Member[];
@@ -146,7 +146,7 @@ export default {
           .toUpperCase();
         const keys = { host: token(), red: token(), blue: token() };
         const room: Saved = {
-          schemaVersion: 2,
+          schemaVersion: 3,
           categoryIds,
           members: [],
           createdAt: Date.now(),
@@ -198,7 +198,7 @@ export default {
           )
             throw Error("بيانات الإدارة غير صالحة");
           const payload = JSON.stringify({
-            schemaVersion: 2,
+            schemaVersion: 3,
             questions,
             disabled: v.disabled,
           });
@@ -379,7 +379,7 @@ export class GameRoom extends DurableObject<Env> {
       }
       if (
         !this.saved ||
-        this.saved.schemaVersion !== 2 ||
+        this.saved.schemaVersion !== 3 ||
         Date.now() > this.saved.expires
       )
         return json({ error: "الغرفة غير متاحة أو انتهت صلاحيتها" }, 404);
@@ -533,7 +533,7 @@ export class GameRoom extends DurableObject<Env> {
         const msg = JSON.parse(message) as Record<string, unknown>;
         if (
           !this.saved ||
-          this.saved.schemaVersion !== 2 ||
+          this.saved.schemaVersion !== 3 ||
           Date.now() > this.saved.expires
         ) {
           ws.close(1008, "room expired");
@@ -586,7 +586,7 @@ export class GameRoom extends DurableObject<Env> {
   async alarm() {
     await this.ctx.blockConcurrencyWhile(async () => {
       if (!this.saved) return;
-      if (this.saved.schemaVersion !== 2) {
+      if (this.saved.schemaVersion !== 3) {
         for (const ws of this.ctx.getWebSockets())
           ws.close(1012, "game upgraded; create new room");
         await this.ctx.storage.deleteAlarm();

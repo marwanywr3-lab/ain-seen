@@ -155,33 +155,37 @@ export function createGame(
         (x) => x.category === q.category && x.points === q.points,
       ).length >= 3,
   );
-  if (!riddles.length) throw Error("أسئلة مخمخ غير متوفرة");
-  const sudden = pick(riddles);
+
+  const sudden = pick(riddles.length ? riddles : questions);
   const cells: Cell[] = [];
+  const used = new Set<number>([sudden.id]);
   for (const category of categories)
-    for (const points of POINTS) {
-      const pool = questions.filter(
-        (q) =>
-          q.categoryId === category.id &&
-          q.points === points &&
-          q.id !== sudden.id,
-      );
-      if (pool.length < 2)
-        throw Error(
-          `نحتاج سؤالين على الأقل: ${category.name} / ${points} بعد حجز الفاصل`,
+    for (const points of POINTS)
+      for (let slot = 0; slot < 2; slot++) {
+        const pool = questions.filter(
+          (q) =>
+            q.categoryId === category.id &&
+            q.points === points &&
+            !used.has(q.id),
         );
-      const question = pick(pool);
-      const fallback = pick(pool.filter((q) => q.id !== question.id));
-      cells.push({
-        id: `${category.id}:${points}`,
-        category: category.name,
-        categoryId: category.id,
-        points,
-        status: "available",
-        question,
-        fallback,
-      });
-    }
+        if (pool.length < 2)
+          throw Error(
+            `نحتاج سؤالين على الأقل: ${category.name} / ${points} بعد حجز الفاصل`,
+          );
+        const question = pick(pool);
+        const fallback = pick(pool.filter((q) => q.id !== question.id));
+        used.add(question.id);
+        used.add(fallback.id);
+        cells.push({
+          id: `${category.id}:${points}:${slot}`,
+          category: category.name,
+          categoryId: category.id,
+          points,
+          status: "available",
+          question,
+          fallback,
+        });
+      }
   cursor = random(cursor);
   const team = (id: TeamId, name: string): Team => ({
     id,

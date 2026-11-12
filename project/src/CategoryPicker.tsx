@@ -16,7 +16,7 @@ export function CategoryPicker({
       <div className="toolbar">
         <div>
           <h2>اختاروا ساحة التحدي</h2>
-          <p>٦ فئات من أصل ٣٠ · ١٨ سؤالًا · ٢٠٠ / ٤٠٠ / ٦٠٠</p>
+          <p>٦ فئات من أصل ٣٨ · ٣٦ سؤالًا · ٢٠٠ / ٤٠٠ / ٦٠٠</p>
         </div>
         <b role="status">{value.length.toLocaleString("ar-SA")} / ٦</b>
         <button
@@ -61,7 +61,7 @@ export function CategoryPicker({
                     : [...value, c.id],
                 )
               }
-              title="٣ أسئلة في المباراة: ٢٠٠ و٤٠٠ و٦٠٠"
+              title="٦ أسئلة في المباراة: سؤالان لكل قيمة ٢٠٠ و٤٠٠ و٦٠٠"
             >
               <img
                 src={c.icon}

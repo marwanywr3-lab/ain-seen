@@ -1,3 +1,5 @@
+import { GameBoard } from "./GameBoard";
+import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
 import { categories, categoryFor } from "./catalog";
 import {
@@ -318,11 +320,14 @@ export default function RemoteApp() {
           >
             {reducedMotion ? "الحركات: متوقفة" : "إيقاف الحركات والأنيميشن"}
           </button>
+          <a href="#offline">أوفلاين · شاشة واحدة</a>
           <a href="./admin.html">بوابة الأسئلة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
       </header>
-      {route === "#admin" ? (
+      {route === "#offline" ? (
+        <OfflineApp />
+      ) : route === "#admin" ? (
         <Admin base={base} />
       ) : invitedCode ? (
         <main className="panel join-panel">
@@ -373,7 +378,7 @@ export default function RemoteApp() {
               <em>وسين على الفوز.</em>
             </h1>
             <p>
-              ١٨ فرصة تقلب النتيجة. تشاوروا، خلّوا القرار للقائد، وخلكم جاهزين
+              ٣٦ فرصة تقلب النتيجة. تشاوروا، خلّوا القرار للقائد، وخلكم جاهزين
               للخطف.
             </p>
             <img className="hero-icon" src={icon} alt="أيقونة اللعبة" />
@@ -624,7 +629,7 @@ function Room({
       )}
       {!s && !host && (
         <section className="panel">
-          <h2>فئات المباراة · ١٨ سؤالًا</h2>
+          <h2>فئات المباراة · ٣٦ سؤالًا</h2>
           <p>
             مدة الدور: {(r.turnSeconds ?? 20).toLocaleString("ar-SA")} ثانية
           </p>
@@ -735,7 +740,7 @@ function Room({
           </div>
           <div className="toolbar">
             <span>
-              {s.cells.filter((c) => c.status === "exhausted").length} / ١٨
+              {s.cells.filter((c) => c.status === "exhausted").length} / ٣٦
             </span>
             <b>
               {s.phase === "BOARD"
@@ -767,42 +772,13 @@ function Room({
             <p className="panel">استراحة قصيرة — المقدم يستأنف القيم.</p>
           )}
           {s.phase === "BOARD" ? (
-            <section className="board">
-              {[...new Set(s.cells.map((c) => c.category))].map(
-                (category, i) => (
-                  <article className={`category tint-${i % 4}`} key={category}>
-                    <h3>
-                      <img
-                        src={categoryFor(category)?.icon}
-                        alt=""
-                        width="90"
-                        height="90"
-                      />
-                      {category}
-                    </h3>
-                    {s.cells
-                      .filter((c) => c.category === category)
-                      .map((cell) => (
-                        <button
-                          key={cell.id}
-                          disabled={!can(s.turn) || cell.status !== "available"}
-                          onClick={() =>
-                            command({
-                              type: "SELECT_CELL",
-                              team: s.turn,
-                              cellId: cell.id,
-                            })
-                          }
-                        >
-                          {cell.status === "exhausted"
-                            ? "✓"
-                            : cell.points.toLocaleString("ar-SA")}
-                        </button>
-                      ))}
-                  </article>
-                ),
-              )}
-            </section>
+            <GameBoard
+              cells={s.cells}
+              enabled={can(s.turn)}
+              onSelect={(cellId) =>
+                command({ type: "SELECT_CELL", team: s.turn, cellId })
+              }
+            />
           ) : s.phase === "FINISHED" ? (
             <section className="panel finish">
               <span className="pill">ختام القيم</span>

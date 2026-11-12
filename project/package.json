@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "tsc && vite build --base=./",
+    "build": "tsc && vite build --base=./ && node scripts/build-offline.mjs",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "check": "tsc && tsc -p worker/tsconfig.json",
     "integration": "npm run worker:build && node tests/integration.mjs",

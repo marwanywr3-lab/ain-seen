@@ -1,5 +1,6 @@
 import metadata from "./categories.json" with { type: "json" };
 export interface Category {
+  accent?: string;
   id: string;
   name: string;
   description: string;
@@ -19,7 +20,7 @@ export function selection(input: unknown): string[] {
       (id) => typeof id !== "string" || !categories.some((c) => c.id === id),
     )
   )
-    throw Error("اختر ٦ فئات مختلفة من أصل ٣٠ فئة");
+    throw Error("اختر ٦ فئات مختلفة من أصل ٣٨ فئة");
   return [...input] as string[];
 }
 export const categoryFor = (name: string) =>

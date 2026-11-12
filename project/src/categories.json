@@ -1,242 +1,344 @@
 [
   {
     "id": "c01",
-    "name": "ثقافة سعودية وخليجية",
-    "description": "يشمل التراث الشعبي، المعالم التاريخية والحديثة، المناطق والمحافظات، العادات والتقاليد، الأمثال واللهجات الدارجة في المملكة العربية السعودية ودول الخليج العربي. يندرج تحته أي سؤال يعزز الهوية والذاكرة المحلية.",
-    "iconId": "category-01",
-    "icon": "categories/c01.png",
-    "presentation": "text"
+    "name": "أعلام",
+    "description": "أعلام",
+    "iconId": "category-v3-01",
+    "icon": "categories-v3/c01.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c02",
-    "name": "معلومات عامة",
-    "description": "موسوعة المعرفة الإنسانية التي لا تتقيد بتخصص واحد. يتضمن حقائق مدهشة، موسوعات غينيس، أرقام قياسية، واختراعات غيرت العالم. يختبر المخزون الثقافي الفطري لدى اللاعبين.",
-    "iconId": "category-02",
-    "icon": "categories/c02.png",
-    "presentation": "text"
+    "name": "الحرب العالمية",
+    "description": "الحرب العالمية",
+    "iconId": "category-v3-02",
+    "icon": "categories-v3/c02.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c03",
-    "name": "ألغاز ومخمخة",
-    "description": "أسئلة التفكير الجانبي (Lateral Thinking)، الخدع اللفظية، وحيل الكلمات التي تتطلب تركيزاً وهدوءاً وربطاً ذكياً بدلاً من مجرد الحفظ. تصنف فيه الأسئلة التي تجعل الفريق يتشاور ويقول: \"فيها فخ!\".",
-    "iconId": "category-03",
-    "icon": "categories/c03.png",
-    "presentation": "text"
+    "name": "الحرمين",
+    "description": "الحرمين",
+    "iconId": "category-v3-03",
+    "icon": "categories-v3/c03.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c04",
-    "name": "جغرافيا ودول",
-    "description": "تضاريس الأرض، عواصم الدول، القارات، المضائق والبحار، والحدود السياسية وعجائب الطبيعة الجغرافية حول العالم.",
-    "iconId": "category-04",
-    "icon": "categories/c04.png",
-    "presentation": "text"
+    "name": "الجنوب",
+    "description": "الجنوب",
+    "iconId": "category-v3-04",
+    "icon": "categories-v3/c04.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c05",
-    "name": "علوم وطبيعة",
-    "description": "الفضاء والكون، جسم الإنسان، الكيمياء والفيزياء الممتعة، عالم الحيوان والنبات، والظواهر المناخية والبيئية.",
-    "iconId": "category-05",
-    "icon": "categories/c05.png",
-    "presentation": "text"
+    "name": "الشرقية",
+    "description": "الشرقية",
+    "iconId": "category-v3-05",
+    "icon": "categories-v3/c05.svg",
+    "presentation": "text",
+    "accent": "#cbecf7"
   },
   {
     "id": "c06",
-    "name": "رياضة وكورة",
-    "description": "بطولات كرة القدم المحلية والعالمية (الدوري السعودي، دوري أبطال أوروبا، كأس العالم)، بالإضافة إلى الرياضات الأخرى مثل التنس، الفورمولا 1، والألعاب الأولمبية.",
-    "iconId": "category-06",
-    "icon": "categories/c06.png",
-    "presentation": "text"
+    "name": "الشمال",
+    "description": "الشمال",
+    "iconId": "category-v3-06",
+    "icon": "categories-v3/c06.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c07",
-    "name": "تاريخ وحضارات",
-    "description": "التاريخ الإسلامي، المعارك الفاصلة، الملوك والخلفاء، الحضارات القديمة (الأنباط، الفراعنة، بابل، الإغريق)، وتاريخ تأسيس الدول الحديثة.",
-    "iconId": "category-07",
-    "icon": "categories/c07.png",
-    "presentation": "text"
+    "name": "الصحابة",
+    "description": "الصحابة",
+    "iconId": "category-v3-07",
+    "icon": "categories-v3/c07.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c08",
-    "name": "إسلاميات",
-    "description": "علوم القرآن الكريم، السيرة النبوية العطرة، قصص الأنبياء، الصحابة والتابعين، الفقه الميسر، والمناسبات الدينية.",
-    "iconId": "category-08",
-    "icon": "categories/c08.png",
-    "presentation": "text"
+    "name": "الغربية",
+    "description": "الغربية",
+    "iconId": "category-v3-08",
+    "icon": "categories-v3/c08.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c09",
-    "name": "أفلام ومسلسلات",
-    "description": "السينما العالمية، هوليوود، المسلسلات الرمضانية العربية والخليجية، أعمال المنصات الحديثة، والأنمي وأفلام الكرتون الكلاسيكية.",
-    "iconId": "category-09",
-    "icon": "categories/c09.png",
-    "presentation": "text"
+    "name": "الكويت",
+    "description": "الكويت",
+    "iconId": "category-v3-09",
+    "icon": "categories-v3/c09.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c10",
-    "name": "تقنية وألعاب",
-    "description": "ألعاب الفيديو ومنصاتها (بلايستيشن، إكس بوكس، نينتندو، بي سي)، عمالقة التقنية (آبل، جوجل، مايكروسوفت)، الهواتف، والذكاء الاصطناعي والمصطلحات البرمجية الشائعة.",
-    "iconId": "category-10",
-    "icon": "categories/c10.png",
-    "presentation": "text"
+    "name": "الوسطى",
+    "description": "الوسطى",
+    "iconId": "category-v3-10",
+    "icon": "categories-v3/c10.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c11",
-    "name": "لغة وأدب",
-    "description": "جماليات اللغة العربية، فصيح المعاني، مفردات وجموع غريبة، روائع الشعر العربي (المعلقات، المتنبي، العصر الحديث)، والروايات الشهيرة.",
-    "iconId": "category-11",
-    "icon": "categories/c11.png",
-    "presentation": "text"
+    "name": "تطبيقات",
+    "description": "تطبيقات",
+    "iconId": "category-v3-11",
+    "icon": "categories-v3/c11.svg",
+    "presentation": "text",
+    "accent": "#cbd6f7"
   },
   {
     "id": "c12",
-    "name": "أكل ومطاعم",
-    "description": "المطابخ العالمية والشعبية، التوابل، الحلويات والمشروبات، تقنيات الطهي، وأشهر المطاعم والأطباق المميزة للمدن.",
-    "iconId": "category-12",
-    "icon": "categories/c12.png",
-    "presentation": "text"
+    "name": "تكنولوجيا",
+    "description": "تكنولوجيا",
+    "iconId": "category-v3-12",
+    "icon": "categories-v3/c12.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c13",
-    "name": "مقرّب مرة (زوم إن - Zoom In)",
-    "description": "عرض صورة مقربة جداً وبشكل مفرط لشيء مألوف جداً في حياتنا اليومية (أداة منزلية، فاكهة، حيوان، أو مادة)، ومطالبة الفرق باكتشاف أصل هذا الشيء قبل ابتعاد الكاميرا.",
-    "iconId": "category-13",
-    "icon": "categories/c13.png",
-    "presentation": "text"
+    "name": "جغرافيا",
+    "description": "جغرافيا",
+    "iconId": "category-v3-13",
+    "icon": "categories-v3/c13.svg",
+    "presentation": "text",
+    "accent": "#cbd6f7"
   },
   {
     "id": "c14",
-    "name": "خمّن الشعار (Logos & Brands)",
-    "description": "عرض شعارات لشركات عالمية، تطبيقات تقنية، أو علامات تجارية سعودية وخليجية بعد مسح الاسم منها أو التلاعب البسيط بأحد تفاصيلها.",
-    "iconId": "category-14",
-    "icon": "categories/c14.png",
-    "presentation": "text"
+    "name": "جيل الطيبين",
+    "description": "جيل الطيبين",
+    "iconId": "category-v3-14",
+    "icon": "categories-v3/c14.svg",
+    "presentation": "text",
+    "accent": "#cbd6f7"
   },
   {
     "id": "c15",
-    "name": "شعارات أندية ومسابقات (Club Badges)",
-    "description": "عرض شعارات أندية كرة قدم (سعودية، عربية، وعالمية) أو منتخبات بعد طمس اسم النادي والحروف المميزة منه، أو الاكتفاء بالرمز المركزي فقط.",
-    "iconId": "category-15",
-    "icon": "categories/c15.png",
-    "presentation": "text"
+    "name": "جزء تبارك",
+    "description": "جزء تبارك",
+    "iconId": "category-v3-15",
+    "icon": "categories-v3/c15.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c16",
-    "name": "معالم من السماء (عين الصقر)",
-    "description": "صور جوية مأخوذة عبر الأقمار الصناعية (Google Earth) بزاوية رأسية لمعالم شهيرة وملاعب وميادين عالمية وسعودية.",
-    "iconId": "category-16",
-    "icon": "categories/c16.png",
-    "presentation": "text"
+    "name": "جزء عم",
+    "description": "جزء عم",
+    "iconId": "category-v3-16",
+    "icon": "categories-v3/c16.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c17",
-    "name": "شخصيات مموهة أو كرتونية (Pixelated & Silhouettes)",
-    "description": "صور لشخصيات مشهورة، قادة تاريخيين، ممثلين، أو أبطال مسلسلات كرتونية بعد تقليل دقتها (Pixelated) أو تحويلها إلى ظل أسود كامل (Silhouette).",
-    "iconId": "category-17",
-    "icon": "categories/c17.png",
-    "presentation": "text"
+    "name": "دول وعواصم",
+    "description": "دول وعواصم",
+    "iconId": "category-v3-17",
+    "icon": "categories-v3/c17.svg",
+    "presentation": "text",
+    "accent": "#cbd6f7"
   },
   {
     "id": "c18",
-    "name": "لقطة من فيلم أو مسلسل (Scene Spotter)",
-    "description": "إظهار لقطة واحدة (Frame) معبرة جداً من مشهد سينمائي بدون إظهار وجوه الممثلين بوضوح (مثلاً تصوير الظهر، أو زاوية المكان المميز).",
-    "iconId": "category-18",
-    "icon": "categories/c18.png",
-    "presentation": "text"
+    "name": "رؤساء الدول",
+    "description": "رؤساء الدول",
+    "iconId": "category-v3-18",
+    "icon": "categories-v3/c18.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c19",
-    "name": "أخطاء وفروقات مخمخة (Spot the Difference)",
-    "description": "عرض صورتين متجاورتين متطابقتين ظاهرياً مع وجود 3 إلى 5 فروقات دقيقة بينهما، ويطلب من الفريق رصد الفروق خلال زمن محدد (مثلاً 45 ثانية).",
-    "iconId": "category-19",
-    "icon": "categories/c19.png",
-    "presentation": "text"
+    "name": "سياحة وسفر",
+    "description": "سياحة وسفر",
+    "iconId": "category-v3-19",
+    "icon": "categories-v3/c19.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c20",
-    "name": "لغز الصورة التراكمية (Rebus Puzzle)",
-    "description": "دمج صورتين أو أكثر معاً لإنتاج كلمة، اسم دولة، أو مثل شعبي عند نطق أسمائها بالتسلسل (Rebus).",
-    "iconId": "category-20",
-    "icon": "categories/c20.png",
-    "presentation": "text"
+    "name": "سوبرماركت",
+    "description": "سوبرماركت",
+    "iconId": "category-v3-20",
+    "icon": "categories-v3/c20.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c21",
-    "name": "فزعة ونكبة (تحدي المخاطرة)",
-    "description": "فئة خاصة بالقرارات التكتيكية: الإجابة الصحيحة تمنحك نقاطاً مضاعفة، لكن الإجابة الخاطئة تخصم نفس القيمة من رصيد الفريق أو تمنح الفريق الخصم ميزة سرقة نقاط فورية.",
-    "iconId": "category-21",
-    "icon": "categories/c21.png",
-    "presentation": "text"
+    "name": "شعارات سعودية",
+    "description": "شعارات سعودية",
+    "iconId": "category-v3-21",
+    "icon": "categories-v3/c21.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c22",
-    "name": "جيل الطيبين (نوستالجيا والتسعينات)",
-    "description": "كل ما يرتبط بفترة الثمانينات والتسعينات وبدايات الألفية: ألعاب الطيبين، إعلانات التلفزيون القديمة، برامج القناة الأولى، أجهزة السيجا والعائلة، والحلويات المندثرة.",
-    "iconId": "category-22",
-    "icon": "categories/c22.png",
-    "presentation": "text"
+    "name": "شعارات عالمية",
+    "description": "شعارات عالمية",
+    "iconId": "category-v3-22",
+    "icon": "categories-v3/c22.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c23",
-    "name": "سرعة بديهة وحساب ذهني (Math & Quick Logic)",
-    "description": "مسائل حسابية ذكية لا تتطلب ورقة وقلم، بل سرعة انتباه وذكاء حسابي تحت ضغط الوقت القصير (15 إلى 30 ثانية).",
-    "iconId": "category-23",
-    "icon": "categories/c23.png",
-    "presentation": "text"
+    "name": "عالم الساعات",
+    "description": "عالم الساعات",
+    "iconId": "category-v3-23",
+    "icon": "categories-v3/c23.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c24",
-    "name": "أمثال وحكايات شعبية",
-    "description": "إكمال أمثال شعبية نادرة، أو معرفة القصة والأصل الذي قيل فيه المثل الشهير (سبب ضرب المثل).",
-    "iconId": "category-24",
-    "icon": "categories/c24.png",
-    "presentation": "text"
+    "name": "عالم الطيران",
+    "description": "عالم الطيران",
+    "iconId": "category-v3-24",
+    "icon": "categories-v3/c24.svg",
+    "presentation": "text",
+    "accent": "#cbecf7"
   },
   {
     "id": "c25",
-    "name": "من القائل؟ (اقتباسات وشخصيات)",
-    "description": "مقولات شهيرة، خطب تاريخية، حوارات أدبية أو سينمائية، ويُطلب من الفريق تحديد الشخصية التي قالتها.",
-    "iconId": "category-25",
-    "icon": "categories/c25.png",
-    "presentation": "text"
+    "name": "عواصم",
+    "description": "عواصم",
+    "iconId": "category-v3-25",
+    "icon": "categories-v3/c25.svg",
+    "presentation": "text",
+    "accent": "#cbecf7"
   },
   {
     "id": "c26",
-    "name": "سيارات ومحركات",
-    "description": "أنواع السيارات، الشركات المصنعة، معاني علامات الطبلون، أرقام المحركات، وتاريخ وموديلات السيارات الكلاسيكية والحديثة.",
-    "iconId": "category-26",
-    "icon": "categories/c26.png",
-    "presentation": "text"
+    "name": "عطور عالمية",
+    "description": "عطور عالمية",
+    "iconId": "category-v3-26",
+    "icon": "categories-v3/c26.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
   },
   {
     "id": "c27",
-    "name": "أرقام وإحصائيات (أقرب تخمين يفوز)",
-    "description": "أسئلة إحصائية دقيقة لا يُتوقع حفظها بالكامل؛ يكتب كل فريق تخمينه، والفريق صاحب الرقم الأقرب للرقم الفعلي يحصل على النقاط.",
-    "iconId": "category-27",
-    "icon": "categories/c27.png",
-    "presentation": "text"
+    "name": "عطور عربية",
+    "description": "عطور عربية",
+    "iconId": "category-v3-27",
+    "icon": "categories-v3/c27.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c28",
-    "name": "شارات كرتون الطيبين",
-    "description": "تشغيل مقطع صوتي لا يتجاوز 5 إلى 10 ثوانٍ من لحن أو مقدمة مسلسل كرتوني قديم، ويُطلب اسم المسلسل.",
-    "iconId": "category-28",
-    "icon": "categories/c28.png",
-    "presentation": "text"
+    "name": "عملات",
+    "description": "عملات",
+    "iconId": "category-v3-28",
+    "icon": "categories-v3/c28.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c29",
-    "name": "خمّن الصوت (Sound FX)",
-    "description": "أصوات من البيئة، حيوانات نادرة، أصوات أدوات ميكانيكية، أو رنات أجهزة قديمة شهيرة.",
-    "iconId": "category-29",
-    "icon": "categories/c29.png",
-    "presentation": "text"
+    "name": "عمان",
+    "description": "عمان",
+    "iconId": "category-v3-29",
+    "icon": "categories-v3/c29.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   },
   {
     "id": "c30",
-    "name": "لهجات ومفردات عربية",
-    "description": "كلمات ومصطلحات من مختلف اللهجات العربية (نجدية، حجازية، جنوبية، شمالية، كويتية، مغربية، مصرية، شامية) ومعرفة معناها بالفصحى.",
-    "iconId": "category-30",
-    "icon": "categories/c30.png",
-    "presentation": "text"
+    "name": "قصص الأنبياء",
+    "description": "قصص الأنبياء",
+    "iconId": "category-v3-30",
+    "icon": "categories-v3/c30.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
+  },
+  {
+    "id": "c31",
+    "name": "قطر",
+    "description": "قطر",
+    "iconId": "category-v3-31",
+    "icon": "categories-v3/c31.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
+  },
+  {
+    "id": "c32",
+    "name": "لغات ولهجات",
+    "description": "لغات ولهجات",
+    "iconId": "category-v3-32",
+    "icon": "categories-v3/c32.svg",
+    "presentation": "text",
+    "accent": "#f7d6cb"
+  },
+  {
+    "id": "c33",
+    "name": "ما هي الدولة",
+    "description": "ما هي الدولة",
+    "iconId": "category-v3-33",
+    "icon": "categories-v3/c33.svg",
+    "presentation": "text",
+    "accent": "#cbf7d6"
+  },
+  {
+    "id": "c34",
+    "name": "ما هي المدينة",
+    "description": "ما هي المدينة",
+    "iconId": "category-v3-34",
+    "icon": "categories-v3/c34.svg",
+    "presentation": "text",
+    "accent": "#cbecf7"
+  },
+  {
+    "id": "c35",
+    "name": "مطاعم السعودية",
+    "description": "مطاعم السعودية",
+    "iconId": "category-v3-35",
+    "icon": "categories-v3/c35.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
+  },
+  {
+    "id": "c36",
+    "name": "موسم الرياض",
+    "description": "موسم الرياض",
+    "iconId": "category-v3-36",
+    "icon": "categories-v3/c36.svg",
+    "presentation": "text",
+    "accent": "#cbd6f7"
+  },
+  {
+    "id": "c37",
+    "name": "نحو وإعراب",
+    "description": "نحو وإعراب",
+    "iconId": "category-v3-37",
+    "icon": "categories-v3/c37.svg",
+    "presentation": "text",
+    "accent": "#f7cbd6"
+  },
+  {
+    "id": "c38",
+    "name": "Ai",
+    "description": "Ai",
+    "iconId": "category-v3-38",
+    "icon": "categories-v3/c38.svg",
+    "presentation": "text",
+    "accent": "#f7eccb"
   }
 ]

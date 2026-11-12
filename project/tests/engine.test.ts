@@ -182,24 +182,28 @@ test("final tie enters sudden death; first buzzer has exclusive answer and timeo
   assert.equal(s.phase, "FINISHED");
 });
 
-test("replacement 480 questions support 100 seeds with complete boards and reserved sudden questions", async () => {
+test("760 questions support 100 seeds with 36 unique questions and unused replacements", async () => {
   const { readFile } = await import("node:fs/promises");
   const real = parseQuestions(
     JSON.parse(
       await readFile(new URL("../src/questions.json", import.meta.url), "utf8"),
     ),
   );
-  assert.equal(real.length, 480);
+  assert.equal(real.length, 760);
   for (let seed = 0; seed < 100; seed++) {
     const selected = Array.from(
       { length: 6 },
-      (_, i) => categories[(seed + i * 3) % 30]!.id,
+      (_, i) => categories[(seed + i * 3) % 38]!.id,
     );
     const s = createGame(real, ["أ", "ب"], seed, selected);
     assert.equal(new Set(s.cells.map((c) => c.categoryId)).size, 6);
     assert.ok(s.cells.every((c) => selected.includes(c.categoryId)));
-    assert.equal(s.cells.length, 18);
-    assert.equal(new Set(s.cells.map((c) => c.id)).size, 18);
+    assert.equal(s.cells.length, 36);
+    assert.equal(new Set(s.cells.map((c) => c.id)).size, 36);
+    assert.equal(
+      new Set(s.cells.flatMap((c) => [c.question.id, c.fallback.id])).size,
+      72,
+    );
     for (const c of s.cells) {
       assert.notEqual(c.question.id, c.fallback.id);
       assert.notEqual(c.question.id, s.sudden.id);

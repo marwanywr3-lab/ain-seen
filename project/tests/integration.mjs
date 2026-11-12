@@ -160,7 +160,7 @@ try {
     (await act(keys.host, { type: "SET_TURN_SECONDS", seconds: 20 })).status,
     409,
   );
-  assert.equal(host.game.cells.length, 18);
+  assert.equal(host.game.cells.length, 36);
   assert.equal(
     (await act(keys.host, { type: "SET_CATEGORIES", categoryIds: ids })).status,
     409,
@@ -286,7 +286,7 @@ try {
   assert.equal(rejoined.state.game.phase, "STEAL_BUZZ");
   const admin = await request("/admin/bank", { key: "local-test-only" });
   assert.equal(admin.status, 200);
-  assert.equal(admin.data.questions.length, 480);
+  assert.equal(admin.data.questions.length, 760);
   assert.equal((await request("/bank")).status, 200);
   const put = await request("/admin/bank", {
     key: "local-test-only",

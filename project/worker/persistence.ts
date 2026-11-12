@@ -8,7 +8,7 @@ export interface RoomEvent {
   at: number;
 }
 export interface RoomRecord {
-  schemaVersion: 2;
+  schemaVersion: 3;
   categoryIds: string[];
   members?: {
     id: string;

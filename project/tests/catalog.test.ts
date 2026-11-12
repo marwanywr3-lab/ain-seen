@@ -6,24 +6,25 @@ import { categories, selection } from "../src/catalog.ts";
 const read = (path: string) =>
   JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const data = read("../src/data.json");
-const source = read("../content/source-questions.json");
+const source = read("../content/source-questions-v3.json");
 const questions = parseQuestions(
   data.categories.flatMap((c: { questions: unknown[] }) => c.questions),
 );
-test("all 480 source texts and answers are preserved; all 30 categories have usable tier pools and mapped PNGs", () => {
-  assert.equal(categories.length, 30);
-  assert.equal(questions.length, 480);
+test("all 760 source texts, answers and points preserved; 38 vector categories", () => {
+  assert.equal(categories.length, 38);
+  assert.equal(questions.length, 760);
   for (const q of questions) {
-    assert.equal(q.question, source[q.sourceIndex!]["السؤال"]);
-    assert.equal(q.answer, source[q.sourceIndex!]["الاجابة"]);
-    assert.equal(q.sourcePoints, source[q.sourceIndex!]["الصعوبة"]);
+    assert.equal(q.question, source[q.sourceIndex!].question);
+    assert.equal(q.answer, source[q.sourceIndex!].answer);
+    assert.equal(q.sourcePoints, source[q.sourceIndex!].level);
     assert.equal(q.options.filter((o) => o === q.answer).length, 1);
   }
   for (const c of categories) {
     assert.ok(
-      readFileSync(new URL("../public/" + c.icon, import.meta.url))
-        .subarray(1, 4)
-        .equals(Buffer.from("PNG")),
+      readFileSync(
+        new URL("../public/" + c.icon, import.meta.url),
+        "utf8",
+      ).includes("<svg"),
     );
     for (const tier of [200, 400, 600])
       assert.ok(
@@ -43,18 +44,18 @@ test("selection rejects duplicates, five/seven categories and unknown category I
   ])
     assert.throws(() => selection(input));
 });
-test("all categories can form an eighteen-cell match with exactly one of each tier per selected category", () => {
-  for (let offset = 0; offset < 30; offset++) {
+test("all categories form a 36-cell match with two of every tier per category", () => {
+  for (let offset = 0; offset < 38; offset++) {
     const ids = Array.from(
       { length: 6 },
-      (_, i) => categories[(i + offset) % 30]!.id,
+      (_, i) => categories[(i + offset) % 38]!.id,
     );
     const game = createGame(questions, ["أ", "ب"], offset, ids);
-    assert.equal(game.cells.length, 18);
+    assert.equal(game.cells.length, 36);
     for (const id of ids)
       assert.deepEqual(
         game.cells.filter((c) => c.categoryId === id).map((c) => c.points),
-        [200, 400, 600],
+        [200, 200, 400, 400, 600, 600],
       );
   }
 });

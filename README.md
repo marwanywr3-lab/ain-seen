@@ -1,3 +1,5 @@
+> Current release: see [CURRENT-V3.md](CURRENT-V3.md). The text below records the previous release.
+
 # عين سين
 
 مسابقة عربية لفريقين ومقدم إلزامي، بواجهة React وTypeScript على GitHub Pages، وخادم Cloudflare Workers مع D1 وDurable Objects.
