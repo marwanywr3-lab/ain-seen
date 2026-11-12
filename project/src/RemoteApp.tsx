@@ -873,7 +873,7 @@ function Room({
                             ? "hidden"
                             : "visible",
                         }}
-                        className={`${selected === index ? "selected" : ""} ${["RESOLUTION", "FINISHED"].includes(s.phase) && option === s.current?.answer ? "correct" : ""}`}
+                        className={`${selected === index ? "selected" : ""} ${["RESOLUTION", "FINISHED"].includes(s.phase) && option === s.current?.answer ? "correct" : ""} ${["RESOLUTION", "FINISHED"].includes(s.phase) && selected === index && option !== s.current?.answer ? "incorrect" : ""}`}
                         disabled={
                           !s.answerTeam ||
                           !can(s.answerTeam) ||
