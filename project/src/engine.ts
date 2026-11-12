@@ -351,11 +351,7 @@ export function transition(
           resolve("إجابة صحيحة");
         } else mainFailed();
       } else {
-        score(
-          action.team,
-          correct ? s.current!.points : -s.current!.points / 2,
-          correct ? "خطف صحيح" : "عقوبة الخطف",
-        );
+        if (correct) score(action.team, s.current!.points, "خطف صحيح");
         resolve(correct ? "خطف ناجح" : "إجابة الخطف خاطئة");
       }
       break;
@@ -381,7 +377,6 @@ export function transition(
       if (s.phase === "MAIN") mainFailed();
       else if (s.phase === "STEAL_BUZZ") resolve("انتهت فرصة الخطف");
       else if (s.phase === "STEAL_ANSWER") {
-        score(s.answerTeam!, -s.current!.points / 2, "انتهاء وقت الخطف");
         resolve("انتهى وقت إجابة الخطف");
       } else if (s.phase === "SUDDEN_ANSWER") {
         s.winner = other(s.answerTeam!);

@@ -81,7 +81,7 @@ test("late correct answer expires main round without credit", () => {
   assert.equal(n.phase, "STEAL_BUZZ");
   assert.equal(n.teams[s.turn].score, 0);
 });
-test("double down penalty and steal half penalty are applied exactly once", () => {
+test("double down penalty applies once and steal timeout has no penalty", () => {
   let s = game();
   s = transition(
     s,
@@ -104,11 +104,21 @@ test("double down penalty and steal half penalty are applied exactly once", () =
   s = transition(s, { type: "BUZZ_STEAL", team: other(team) }, 200);
   const timer = s.timerId;
   s = transition(s, { type: "EXPIRE_TIMER", timerId: timer }, 7200);
-  assert.equal(s.teams[other(team)].score, -100);
+  assert.equal(s.teams[other(team)].score, 0);
   assert.strictEqual(
     transition(s, { type: "EXPIRE_TIMER", timerId: timer }, 8000),
     s,
   );
+});
+test("incorrect steal does not deduct points", () => {
+  let s = main();
+  const team = s.turn;
+  s = transition(s, { type: "SUBMIT_ANSWER", team, index: s.current!.options.findIndex((o) => o !== s.current!.answer) }, 100);
+  assert.equal(s.teams[team].score, 0);
+  const rival = other(team);
+  s = transition(s, { type: "BUZZ_STEAL", team: rival }, 200);
+  s = transition(s, { type: "SUBMIT_ANSWER", team: rival, index: s.current!.options.findIndex((o) => o !== s.current!.answer) }, 300);
+  assert.equal(s.teams[rival].score, 0);
 });
 test("freeze halves remaining time and is single use", () => {
   let s = main();
