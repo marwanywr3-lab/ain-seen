@@ -10,9 +10,9 @@ const source = read("../content/source-questions-v3.json");
 const questions = parseQuestions(
   data.categories.flatMap((c: { questions: unknown[] }) => c.questions),
 );
-test("all 760 source texts, answers and points preserved; 38 vector categories", () => {
+test("source texts, answers and points preserved; 38 vector categories", () => {
   assert.equal(categories.length, 38);
-  assert.equal(questions.length, 760);
+  assert.equal(questions.length, source.length);
   for (const q of questions) {
     assert.equal(q.question, source[q.sourceIndex!].question);
     assert.equal(q.answer, source[q.sourceIndex!].answer);

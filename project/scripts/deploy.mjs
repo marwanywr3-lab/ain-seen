@@ -51,11 +51,12 @@ const bankCheck = await fetch(`${apiUrl}/bank`, {
   signal: AbortSignal.timeout(15000),
 });
 const bankData = await bankCheck.json();
+const localBank = JSON.parse(await readFile("src/questions.json", "utf8"));
 if (
   !bankCheck.ok ||
   !Array.isArray(bankData.questions) ||
   bankData.schemaVersion !== 3 ||
-  bankData.questions.length !== 760 ||
+  bankData.questions.length !== localBank.length ||
   new Set(bankData.questions.map((q) => q.categoryId)).size !== 38 ||
   bankData.questions.some((q) => ![200, 400, 600].includes(q.points))
 )

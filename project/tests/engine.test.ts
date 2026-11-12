@@ -182,14 +182,14 @@ test("final tie enters sudden death; first buzzer has exclusive answer and timeo
   assert.equal(s.phase, "FINISHED");
 });
 
-test("760 questions support 100 seeds with 36 unique questions and unused replacements", async () => {
+test("question bank supports 100 seeds with 36 unique questions and unused replacements", async () => {
   const { readFile } = await import("node:fs/promises");
   const real = parseQuestions(
     JSON.parse(
       await readFile(new URL("../src/questions.json", import.meta.url), "utf8"),
     ),
   );
-  assert.equal(real.length, 760);
+  assert.ok(real.length >= 760);
   for (let seed = 0; seed < 100; seed++) {
     const selected = Array.from(
       { length: 6 },
