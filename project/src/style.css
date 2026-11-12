@@ -1339,7 +1339,7 @@ main { max-width:1500px; }
 .hero-content p { font-size:clamp(20px,2.1vw,31px); font-weight:800; line-height:1.7; margin:14px 0 22px; color:#101d38; }
 .hero-action { display:inline-block; text-decoration:none; font-size:22px; font-weight:800; padding:13px 48px; }
 .redesign-home > .category-picker { grid-column:1; grid-row:2; margin:0 auto; width:min(1420px,94%); background:#f0f1f4; border:0; padding:28px; box-shadow:none; }
-.redesign-home > .panel:not(.category-picker):not(.how-to-play) { grid-column:1; grid-row:3; width:min(1000px,94%); margin:auto; }
+.redesign-home > .panel:not(.category-picker):not(.how-to-play):not(.about-game) { grid-column:1; grid-row:3; width:min(1000px,94%); margin:auto; }
 .redesign-home > .how-to-play { grid-column:1; grid-row:4; width:min(1000px,94%); margin:auto; }
 .category-picker .toolbar { justify-content:center; text-align:center; gap:16px; }
 .category-picker .toolbar h2 { font-size:clamp(26px,3vw,42px); margin:0; }
@@ -1393,7 +1393,7 @@ button:hover:enabled { transform:none; }
 .header-brand { display:flex; align-items:center; gap:8px; }
 header .header-symbol { width:42px; height:42px; object-fit:contain; }
 .offline-action { display:inline-block; margin:8px; padding:12px 26px; border:2px solid #101d38; border-radius:16px; background:#fff; color:#101d38; font-size:20px; font-weight:800; text-decoration:none; }
-.redesign-home > .about-game { grid-column:1; grid-row:5; width:min(1000px,94%); margin:auto; line-height:1.9; }
+.redesign-home > .about-game { grid-column:1; grid-row:5; width:min(1000px,94%); min-width:0; margin:auto; line-height:1.9; overflow-wrap:anywhere; }
 .finish-celebration { position:relative; isolation:isolate; overflow:hidden; max-width:900px; margin:30px auto; padding:45px 20px; text-align:center; border-radius:24px; background:#fff9f2; border:1px solid #f2e3d6; }
 .finish-logo { display:block; width:min(240px,65%); height:90px; object-fit:contain; margin:0 auto 18px; animation:finish-logo-appear .45s .8s both; }
 .winner-banner { position:relative; margin:0 auto 24px; padding:18px 28px; max-width:670px; background:#f56818; color:white; border-radius:16px; animation:winner-slide .8s ease-out both; }
@@ -1411,3 +1411,8 @@ header .header-symbol { width:42px; height:42px; object-fit:contain; }
 @keyframes finish-logo-appear { from { opacity:0; } to { opacity:1; } }
 @keyframes confetti-burst { 0% { transform:translate(0,0) rotate(0); opacity:1; } 65% { opacity:1; } 100% { transform:translate(var(--dx),var(--dy)) rotate(540deg); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .finish-celebration *, .finish-celebration *::before, .finish-celebration *::after { animation:none !important; } }
+.animation.intro.ready { animation:intro-screen 2s ease-in-out both !important; }
+.animation.intro.ready img { width:min(38vw,230px); animation:intro-symbol 2s cubic-bezier(.22,1,.36,1) both !important; }
+@keyframes intro-screen { 0%,72% { opacity:1; } 100% { opacity:0; } }
+@keyframes intro-symbol { 0% { opacity:0; transform:translateY(15px) scale(.88); } 35%,70% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:scale(1.05); } }
+@media (prefers-reduced-motion:reduce) { .animation.intro.ready, .animation.intro.ready img { animation:none !important; } }

@@ -20,12 +20,6 @@ import { roomJoinUrl, readJoinCode } from "./room-links";
 const wordmark = "./redesign/brand/wordmark-nav.svg";
 const ReducedMotion = createContext(false);
 function initialReducedMotion() {
-  try {
-    const saved = localStorage.getItem("ain-reduced-motion");
-    if (saved !== null) return saved === "true";
-  } catch {
-    /* Preferences still work when storage is unavailable. */
-  }
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 function TurnDuration({
@@ -95,7 +89,7 @@ function Animation({
   }, [ready]);
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(() => endRef.current(), kind === "turn" ? 3800 : 3200);
+    const t = setTimeout(() => endRef.current(), kind === "intro" ? 2000 : kind === "turn" ? 3800 : 3200);
     return () => clearTimeout(t);
   }, [kind, ready]);
   return (
@@ -243,7 +237,7 @@ export default function RemoteApp() {
   }, [reducedMotion]);
   const { base, ready: serviceReady } = useServiceUrl();
   const [route, setRoute] = useState(location.hash);
-  const [intro, setIntro] = useState(false);
+  const [intro, setIntro] = useState(true);
   const [names, setNames] = useState<[string, string]>([
     "الفريق الأحمر",
     "الفريق الأزرق",
