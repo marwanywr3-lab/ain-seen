@@ -237,7 +237,7 @@ export default function RemoteApp() {
   }, [reducedMotion]);
   const { base, ready: serviceReady } = useServiceUrl();
   const [route, setRoute] = useState(location.hash);
-  const [intro, setIntro] = useState(true);
+  const [intro, setIntro] = useState(false);
   const [names, setNames] = useState<[string, string]>([
     "الفريق الأحمر",
     "الفريق الأزرق",
