@@ -55,7 +55,7 @@ export function GameBoard({
             </div>
             <div className="category-strip">
               <h3>{name}</h3>
-              <img src={cat?.icon} alt={name} width="150" height="180" />
+              <img src={cat ? `./redesign/categories/${cat.id}.webp` : undefined} alt={name} width="150" height="180" />
               <div className="category-strip-bottom" />
             </div>
             <div className="question-column">

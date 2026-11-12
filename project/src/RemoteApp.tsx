@@ -16,8 +16,7 @@ import { other, type JokerCard, type TeamId } from "./engine";
 import { Admin } from "./admin";
 import { create as createQR } from "qrcode";
 import { roomJoinUrl, readJoinCode } from "./room-links";
-const icon = new URL("../icon.png", import.meta.url).href,
-  wordmark = new URL("../wordmark.png", import.meta.url).href;
+const wordmark = "./redesign/brand/wordmark-nav.svg";
 const ReducedMotion = createContext(false);
 function initialReducedMotion() {
   try {
@@ -112,8 +111,8 @@ function Animation({
         <img
           src={
             kind === "intro"
-              ? new URL("../icon-animation.png", import.meta.url).href
-              : new URL("../wordmark-animation.png", import.meta.url).href
+              ? "./redesign/brand/symbol.svg"
+              : "./redesign/brand/wordmark-nav.svg"
           }
           alt="عين سين"
           loading="eager"
@@ -321,6 +320,7 @@ export default function RemoteApp() {
             {reducedMotion ? "الحركات: متوقفة" : "إيقاف الحركات والأنيميشن"}
           </button>
           <a href="#offline">أوفلاين · شاشة واحدة</a>
+          <a href="#how-to-play">طريقة اللعب</a>
           <a href="./admin.html">بوابة الأسئلة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
@@ -369,19 +369,13 @@ export default function RemoteApp() {
       ) : code ? (
         <Room base={base} code={code} sessionKey={key} />
       ) : (
-        <main className="setup">
+        <main className="setup redesign-home">
           <section className="hero">
-            <span className="pill">فريقان، مقدم واحد، والتحدي لكم</span>
-            <h1>
-              عين على السؤال،
-              <br />
-              <em>وسين على الفوز.</em>
-            </h1>
-            <p>
-              ٣٦ فرصة تقلب النتيجة. تشاوروا، خلّوا القرار للقائد، وخلكم جاهزين
-              للخطف.
-            </p>
-            <img className="hero-icon" src={icon} alt="أيقونة اللعبة" />
+            <div className="hero-content">
+              <h1><picture><source media="(max-width: 550px)" srcSet="./redesign/brand/wordmark-nav.svg" /><img className="hero-wordmark" src="./redesign/brand/wordmark-hero.svg" alt="عين سين" /></picture></h1>
+              <p>لعبة أسئلة ثقافية واجتماعية ممتعة<br /> للعب مع الأصدقاء والعائلة</p>
+              <a className="hero-action" href="#categories">ابدأ التحدي</a>
+            </div>
           </section>
           <section className="panel">
             <h2>جهّز القيم</h2>
@@ -488,6 +482,7 @@ export default function RemoteApp() {
               {creating ? "نجهز الغرفة…" : "أنشئ الجلسة بالفئات المختارة ←"}
             </button>
           </CategoryPicker>
+          <section className="how-to-play panel" id="how-to-play"><h2>طريقة اللعب</h2><p>اختاروا ٦ فئات، وجهّزوا فريقين ومقدمًا، وتنافسوا على ٣٦ سؤالًا بقيم ٢٠٠ و٤٠٠ و٦٠٠. استخدموا وسائل المساعدة واحذروا الخطف!</p><a href="#offline">العب على شاشة واحدة دون إنترنت</a></section>
         </main>
       )}
       <footer>عين سين · القرار للقائد، والمتعة للجميع.</footer>
@@ -638,7 +633,7 @@ function Room({
               const c = categories.find((c) => c.id === id)!;
               return (
                 <span key={id}>
-                  <img src={c.icon} alt="" width="50" height="50" />
+                  <img src={`./redesign/categories/${c.id}.webp`} alt="" width="50" height="50" />
                   {c.name}
                 </span>
               );

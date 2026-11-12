@@ -12,7 +12,7 @@ export function CategoryPicker({
   children?: ReactNode;
 }) {
   return (
-    <section className="category-picker panel" aria-label="اختيار الفئات">
+    <section id="categories" className="category-picker panel" aria-label="اختيار الفئات">
       <div className="toolbar">
         <div>
           <h2>اختاروا ساحة التحدي</h2>
@@ -64,7 +64,7 @@ export function CategoryPicker({
               title="٦ أسئلة في المباراة: سؤالان لكل قيمة ٢٠٠ و٤٠٠ و٦٠٠"
             >
               <img
-                src={c.icon}
+                src={`./redesign/categories/${c.id}.webp`}
                 alt=""
                 loading="lazy"
                 width="100"

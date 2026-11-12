@@ -6,7 +6,7 @@ import "@fontsource/cairo/arabic-400.css";
 import "@fontsource/cairo/arabic-600.css";
 import "@fontsource/cairo/arabic-800.css";
 import "./style.css";
-const wordmark = new URL("../wordmark.png", import.meta.url).href;
+const wordmark = "./redesign/brand/wordmark-nav.svg";
 function Portal() {
   const { base } = useServiceUrl();
   return (
