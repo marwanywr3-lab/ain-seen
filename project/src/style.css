@@ -1357,7 +1357,7 @@ main { max-width:1500px; }
 .category-strip { background:#d5eaf5; border-inline:1px solid #d9dee7; }
 .category-strip img { object-fit:cover; padding:0; height:auto; min-height:130px; }
 .category-strip h3 { color:#fff; background:#ff812f; width:100%; min-height:54px; padding:10px 6px; }
-.category-strip-bottom { background:#f56818; opacity:1; border:0; }
+.category-strip-bottom { display:none; }
 .question-column button { border:1px solid #e8b67e; color:#db5a14; background:#fff8f0; box-shadow:none; }
 .score { border-radius:20px; box-shadow:none; border:1px solid #e5e8f0; }
 .score.red { background:#bd3540; color:#fff; }.score.blue { background:#205cb5; color:#fff; }
