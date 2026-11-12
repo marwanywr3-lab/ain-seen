@@ -1360,18 +1360,20 @@ main { max-width:1500px; }
 .question-column button { border:1px solid #e8b67e; color:#db5a14; background:#fff8f0; box-shadow:none; }
 .score { border-radius:20px; box-shadow:none; border:1px solid #e5e8f0; }
 .score.red { background:#ffe9e6; }.score.blue { background:#e6f0ff; }
-.question.panel { border:0; background:#101d38; color:#fffaf1; padding:clamp(22px,4vw,55px); }
+.question.panel { border:1px solid #e9e2d9; background:#fff9f2; color:#101d38; padding:clamp(22px,4vw,55px); }
 .question .question-top { gap:12px; flex-wrap:wrap; }
 .question .question-top .pill { background:#f56818; color:#fff; border:0; }
-.question > h2 { color:#101d38; background:#fffaf1; border-radius:18px; padding:clamp(22px,3vw,36px); line-height:1.7; }
-.question .options button { border:2px solid #d9dfeb; background:#fffaf1; color:#101d38; box-shadow:none; border-radius:14px; }
+.question > h2 { color:#101d38; background:#fff; border:1px solid #f0e3d5; border-top:5px solid #f56818; border-radius:18px; padding:clamp(22px,3vw,36px); line-height:1.7; }
+.question :where(.toolbar,.prepare,.tray) button:not(.primary):not(.buzzer), .question > button:not(.primary):not(.buzzer) { color:#101d38; background:#fff; border:1px solid #c9d0db; }
+.question :where(.toolbar,.prepare,.tray) button:not(.primary):not(.buzzer):disabled, .question > button:not(.primary):not(.buzzer):disabled { color:#596577; opacity:1; background:#f1f2f4; border-color:#d5d9df; }
+.question .options button { border:2px solid #d9dfeb; background:#fff; color:#101d38; box-shadow:none; border-radius:14px; }
 .question .options button:not(:disabled):hover { border-color:#f56818; background:#fff3e5; }
 .question .options span { color:#101d38; border:0; background:#e8edf5; }
 .question .options button.selected { border-color:#f56818; background:#fff0dd; outline:0; }
 .question .options button.correct { opacity:1; color:#164b2c; border-color:#38a96a; background:#d9f2e1; }
 .question .options button.incorrect { opacity:1; color:#772b2b; border-color:#dd6464; background:#ffe2df; }
-.question .timer strong, .question [role="timer"] { color:#fffaf1; }
-.question .track { border:0; background:#526078; }
+.question .timer strong, .question [role="timer"] { color:#101d38; }
+.question .track { border:0; background:#e0e4ea; }
 .question .track i { background:#f78a37; }
 .question .urgent .track i { background:#ef5145; }
 .question .tray { background:#fffaf1; color:#101d38; border-color:#e1e5ec; }
