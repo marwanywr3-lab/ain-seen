@@ -310,7 +310,6 @@ export default function RemoteApp() {
     <ReducedMotion.Provider value={reducedMotion}>
       <header>
         <a className="header-brand" href="#">
-          <img className="header-symbol" src="./redesign/brand/symbol.svg" alt="" />
           <img src={wordmark} alt="عين سين" />
         </a>
         <nav>
