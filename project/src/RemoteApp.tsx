@@ -313,13 +313,6 @@ export default function RemoteApp() {
           <img src={wordmark} alt="عين سين" />
         </a>
         <nav>
-          <button
-            type="button"
-            aria-pressed={reducedMotion}
-            onClick={() => setReducedMotion(!reducedMotion)}
-          >
-            {reducedMotion ? "الحركات: متوقفة" : "إيقاف الحركات والأنيميشن"}
-          </button>
           <a href="#how-to-play">طريقة اللعب</a>
           <a href="#about">عن اللعبة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>

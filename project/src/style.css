@@ -1388,7 +1388,7 @@ footer { background:#101d38; color:#fff; padding-top:28px; padding-bottom:28px; 
 @media (max-width:550px) { header nav { gap:8px; font-size:12px; } header nav button { padding:8px; } .redesign-home > .hero { min-height:350px; padding:24px 18px; background-position:35% bottom; } .hero-content { width:70%; padding:15px; background:#ffffffdd; border-radius:18px; } .hero-content .hero-wordmark { display:block; width:100%; } .hero-content p { font-size:17px; } .hero-action { font-size:17px; padding:10px 22px; } .redesign-home > .category-picker { padding:16px; } .category-choices { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } }
 
 /* Quiet interface; celebration is the only animated scene. */
-*:not(.finish-celebration):not(.finish-celebration *) { animation:none !important; transition:none !important; }
+*, *::before, *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; }
 button:hover:enabled { transform:none; }
 .header-brand { display:flex; align-items:center; gap:8px; }
 header .header-symbol { width:42px; height:42px; object-fit:contain; }
