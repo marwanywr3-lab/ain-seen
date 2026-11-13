@@ -1353,7 +1353,12 @@ main { max-width:1500px; }
 .category-picker .category-choice.chosen span { background:#2478f2; }
 .category-picker .category-choice:disabled:not(.chosen) { opacity:.52; }
 .category-confirm { text-align:center; padding:26px 0 0; }
-.favorites-controls { display:flex; align-items:end; flex-wrap:wrap; gap:10px; margin:16px 0 22px; padding:16px; border-radius:16px; background:#fff; }
+.favorites-panel { margin:12px 0 18px; }
+.favorites-panel > summary { display:inline-block; cursor:pointer; padding:9px 15px; border:1px solid #d8dce5; border-radius:12px; background:#fff; color:#101d38; font-weight:800; list-style:none; }
+.favorites-panel > summary::-webkit-details-marker { display:none; }
+.favorites-panel > summary::after { content:" ▾"; }
+.favorites-panel[open] > summary::after { content:" ▴"; }
+.favorites-controls { display:flex; align-items:end; flex-wrap:wrap; gap:10px; margin:10px 0 0; padding:16px; border-radius:16px; background:#fff; }
 .favorites-controls label { flex:1 1 190px; }
 .favorites-controls label input, .favorites-controls label select { display:block; width:100%; margin-top:4px; }
 .favorites-controls p { width:100%; margin:0; }

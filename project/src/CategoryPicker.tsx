@@ -67,7 +67,9 @@ export function CategoryPicker({
           مسح الاختيار
         </button>
       </div>
-      <div className="favorites-controls" aria-label="مجموعات الفئات المفضلة">
+      <details className="favorites-panel">
+        <summary>⭐ المفضلة {favorites.length > 0 && <small>({favorites.length.toLocaleString("ar-SA")})</small>}</summary>
+        <div className="favorites-controls" aria-label="مجموعات الفئات المفضلة">
         <label>اسم المجموعة <input value={favoriteName} maxLength={40} placeholder="مثال: جلسة العائلة" onChange={e => setFavoriteName(e.target.value)} /></label>
         <button type="button" disabled={disabled || value.length !== 6 || !favoriteName.trim()} onClick={() => {
           const name = favoriteName.trim();
@@ -79,7 +81,8 @@ export function CategoryPicker({
         <button type="button" disabled={disabled || !favorites.some(f => f.id === selectedFavorite)} onClick={() => { const group = favorites.find(f => f.id === selectedFavorite); if (group) onChange([...group.categories]); }}>اختيار المجموعة</button>
         <button type="button" disabled={disabled || !favorites.some(f => f.id === selectedFavorite)} onClick={() => { if (saveFavorites(favorites.filter(f => f.id !== selectedFavorite))) { setSelectedFavorite(""); setFavoriteMessage("حُذفت المجموعة من هذا الجهاز."); } }}>حذف المجموعة</button>
         {favoriteMessage && <p role="status">{favoriteMessage}</p>}
-      </div>
+        </div>
+      </details>
       <div className="category-choices">
         {categories.map((c) => {
           const checked = value.includes(c.id);
