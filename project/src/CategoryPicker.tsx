@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { categories } from "./catalog";
+import { useAccountLibrary } from "./account";
 type FavoriteGroup = { id: string; name: string; categories: string[] };
 const favoritesKey = "ain-favorite-groups-v2";
 function readFavorites(): FavoriteGroup[] {
@@ -26,12 +27,19 @@ export function CategoryPicker({
   disabled?: boolean;
   children?: ReactNode;
 }) {
-  const [favorites, setFavorites] = useState<FavoriteGroup[]>(readFavorites);
+  const account = useAccountLibrary();
+  const [localFavorites, setLocalFavorites] = useState<FavoriteGroup[]>(readFavorites);
+  const favorites:FavoriteGroup[] = account.userId ? account.items.filter(x => x.kind === "favorite" && !x.payload.deleted && typeof x.payload.name === "string" && Array.isArray(x.payload.categories) && x.payload.categories.length === 6 && new Set(x.payload.categories).size === 6 && x.payload.categories.every(id => typeof id === "string" && categories.some(c => c.id === id))).map(x => ({id:x.id,name:x.payload.name as string,categories:x.payload.categories as string[]})) : localFavorites;
   const [favoriteName, setFavoriteName] = useState("");
   const [selectedFavorite, setSelectedFavorite] = useState("");
   const [favoriteMessage, setFavoriteMessage] = useState("");
-  const saveFavorites = (next: FavoriteGroup[]) => {
-    try { localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next); return true; }
+  const saveFavorites = async (next: FavoriteGroup[]) => {
+    if(account.userId){
+      for(const old of favorites) if(!next.some(x=>x.id===old.id) && !await account.put("favorite",old.id,{deleted:true}))return false;
+      for(const group of next) if(!favorites.some(x=>x.id===group.id && x.name===group.name && JSON.stringify(x.categories)===JSON.stringify(group.categories)) && !await account.put("favorite",group.id,{name:group.name,categories:group.categories}))return false;
+      return true;
+    }
+    try { localStorage.setItem(favoritesKey, JSON.stringify(next)); setLocalFavorites(next); return true; }
     catch { setFavoriteMessage("تعذر حفظ المفضلة على هذا الجهاز."); return false; }
   };
   return (
@@ -71,16 +79,17 @@ export function CategoryPicker({
         <summary>⭐ المفضلة {favorites.length > 0 && <small>({favorites.length.toLocaleString("ar-SA")})</small>}</summary>
         <div className="favorites-controls" aria-label="مجموعات الفئات المفضلة">
         <label>اسم المجموعة <input value={favoriteName} maxLength={40} placeholder="مثال: جلسة العائلة" onChange={e => setFavoriteName(e.target.value)} /></label>
-        <button type="button" disabled={disabled || value.length !== 6 || !favoriteName.trim()} onClick={() => {
+        <button type="button" disabled={disabled || !account.ready || value.length !== 6 || !favoriteName.trim()} onClick={async () => {
           const name = favoriteName.trim();
           if (favorites.some(f => f.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { setFavoriteMessage("يوجد اسم مطابق؛ اختر اسمًا مختلفًا."); return; }
           const group = { id: crypto.randomUUID(), name, categories: [...value] };
-          if (saveFavorites([...favorites, group])) { setSelectedFavorite(group.id); setFavoriteName(""); setFavoriteMessage("حُفظت المجموعة على هذا الجهاز."); }
+          if (await saveFavorites([...favorites, group])) { setSelectedFavorite(group.id); setFavoriteName(""); setFavoriteMessage("حُفظت المجموعة على هذا الجهاز."); }
         }}>حفظ مجموعة المفضلة</button>
         <label>المجموعات المحفوظة <select value={selectedFavorite} onChange={e => { setSelectedFavorite(e.target.value); setFavoriteMessage(""); }}><option value="">اختر مجموعة</option>{favorites.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label>
         <button type="button" disabled={disabled || !favorites.some(f => f.id === selectedFavorite)} onClick={() => { const group = favorites.find(f => f.id === selectedFavorite); if (group) onChange([...group.categories]); }}>اختيار المجموعة</button>
-        <button type="button" disabled={disabled || !favorites.some(f => f.id === selectedFavorite)} onClick={() => { if (saveFavorites(favorites.filter(f => f.id !== selectedFavorite))) { setSelectedFavorite(""); setFavoriteMessage("حُذفت المجموعة من هذا الجهاز."); } }}>حذف المجموعة</button>
+        <button type="button" disabled={disabled || !favorites.some(f => f.id === selectedFavorite)} onClick={async () => { if (await saveFavorites(favorites.filter(f => f.id !== selectedFavorite))) { setSelectedFavorite(""); setFavoriteMessage("حُذفت المجموعة من هذا الجهاز."); } }}>حذف المجموعة</button>
         {favoriteMessage && <p role="status">{favoriteMessage}</p>}
+        {account.userId && <small>{account.error || (!navigator.onLine ? "محفوظة على الجهاز وستزامن عند الاتصال." : account.syncing ? "جارٍ مزامنة المفضلة…" : "مجموعاتك مرتبطة بحسابك.")}</small>}
         </div>
       </details>
       <div className="category-choices">

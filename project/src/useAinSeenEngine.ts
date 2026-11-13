@@ -5,7 +5,7 @@ export function useAinSeenEngine() {
     try {
       const saved = JSON.parse(localStorage.getItem("ain-offline-match-v1") || "null");
       if (!saved || saved.version !== 1 || !saved.game?.teams || !Array.isArray(saved.game?.cells)) return null;
-      return { ...saved.game, deadline: saved.game.deadline === null ? null : performance.now() + Math.max(0, saved.remaining) };
+      return { ...saved.game, archiveId:saved.game.archiveId || crypto.randomUUID(), deadline: saved.game.deadline === null ? null : performance.now() + Math.max(0, saved.remaining) };
     } catch { return null; }
   });
   const ref = useRef(state);
@@ -18,8 +18,9 @@ export function useAinSeenEngine() {
     setState(next);
   }, []);
   const start = useCallback((game: GameState) => {
-    ref.current = game;
-    setState(game);
+    const fresh = { ...game, archiveId:crypto.randomUUID(), startedAt:Date.now() };
+    ref.current = fresh;
+    setState(fresh);
   }, []);
   const reset = useCallback(() => {
     try { localStorage.removeItem("ain-offline-match-v1"); } catch { /* optional storage */ }

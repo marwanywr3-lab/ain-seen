@@ -61,6 +61,16 @@ test("projection never leaks bank, fallback, seed or unrevealed answers", () => 
   assert.equal("answer" in p.current!, false);
   assert.equal("hint" in p.current!, false);
 });
+test("round history is only revealed after the game ends", () => {
+  let s=createGame(q,["a","b"],1);
+  s=transition(s,{type:"SELECT_CELL",team:s.turn,cellId:s.cells[0]!.id},0);
+  s=transition(s,{type:"REVEAL_QUESTION"},0);
+  s=transition(s,{type:"SUBMIT_ANSWER",team:s.turn,index:s.current!.options.indexOf(s.current!.answer)},10);
+  s=transition(s,{type:"RESOLVE_ROUND"},11);
+  assert.equal("history" in project(s,"viewer")!, false);
+  s=transition(s,{type:"END_MATCH"},12);
+  assert.equal(project(s,"viewer")!.history?.length, 1);
+});
 test("wire validation rejects timer injection and invalid team/index/card", () => {
   assert.equal(validCommand({ type: "EXPIRE_TIMER", timerId: 1 }), false);
   assert.equal(

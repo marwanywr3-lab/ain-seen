@@ -2,6 +2,7 @@ import { defaultCategories, selection } from "../src/catalog";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { saveRoomToD1, removeRoomFromD1, type RoomEvent } from "./persistence";
 import { DurableObject } from "cloudflare:workers";
+import { userLibrary } from "./user-library";
 
 import {
   createGame,
@@ -117,6 +118,7 @@ export default {
     let res: Response;
     try {
       if (url.pathname === "/health") res = json({ ok: true });
+      else if (url.pathname === "/account/library") res = await userLibrary(req, env.DB);
       else if (url.pathname === "/rooms" && req.method === "POST") {
         const limit = await env.CREATE_LIMITER.limit({
           key: req.headers.get("CF-Connecting-IP") || "local",
@@ -286,6 +288,7 @@ export class GameRoom extends DurableObject<Env> {
       })),
       categoryIds: [...s.categoryIds],
       hostTeam: s.hostTeam ?? null,
+      createdAt: s.createdAt,
       code: s.code,
       revision: s.revision,
       mode: s.mode,

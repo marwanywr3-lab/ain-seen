@@ -45,6 +45,16 @@ export interface ScoreAuditLog {
   after: number;
   reason: string;
 }
+export interface RoundRecord {
+  round: number;
+  question: Question;
+  team: TeamId;
+  double: boolean;
+  result: string;
+  attempts: { team: TeamId; option: string | null; correct: boolean | null; phase: string }[];
+  helpers: { team: TeamId; card: JokerCard }[];
+  scores: Record<TeamId, number>;
+}
 export interface Cell {
   id: string;
   category: string;
@@ -55,6 +65,11 @@ export interface Cell {
   fallback: Question;
 }
 export interface GameState {
+  archiveId?: string;
+  startedAt?: number;
+  history?: RoundRecord[];
+  currentAttempts?: RoundRecord["attempts"];
+  currentHelpers?: RoundRecord["helpers"];
   turnSeconds?: number;
   phase: Phase;
   teams: Record<TeamId, Team>;
@@ -196,6 +211,9 @@ export function createGame(
     doubleUsed: false,
   });
   return {
+    history: [],
+    currentAttempts: [],
+    currentHelpers: [],
     turnSeconds,
     phase: "BOARD",
     teams: { red: team("red", names[0]), blue: team("blue", names[1]) },
@@ -268,6 +286,11 @@ export function transition(
     timed("STEAL_BUZZ", 7000);
     s.result = "فرصة الخطف";
   };
+  const archiveRound = () => {
+    if (!s.current) return;
+    (s.history ??= []).push({ round:s.round, question:structuredClone(s.current), team:s.turn, double:s.double, result:s.result, attempts:s.currentAttempts ?? [], helpers:s.currentHelpers ?? [], scores:{red:s.teams.red.score,blue:s.teams.blue.score} });
+    s.currentAttempts=[]; s.currentHelpers=[];
+  };
   switch (action.type) {
     case "SELECT_CELL": {
       if (s.phase !== "BOARD" || action.team !== s.turn) return state;
@@ -278,6 +301,8 @@ export function transition(
       cell.status = "active";
       s.activeId = cell.id;
       s.current = cell.question;
+      s.currentAttempts = [];
+      s.currentHelpers = [];
       s.round++;
       s.double = false;
       s.hidden = [];
@@ -329,6 +354,7 @@ export function transition(
       s.teams[action.team].inventory = s.teams[action.team].inventory.filter(
         (c) => c !== action.card,
       );
+      (s.currentHelpers ??= []).push({ team:action.team, card:action.card });
       break;
     }
     case "SUBMIT_ANSWER": {
@@ -342,10 +368,12 @@ export function transition(
       )
         return state;
       const correct = s.current!.options[action.index] === s.current!.answer;
+      (s.currentAttempts ??= []).push({ team:action.team, option:s.current!.options[action.index]!, correct, phase:s.phase });
       if (s.phase === "SUDDEN_ANSWER") {
         s.winner = correct ? action.team : other(action.team);
         stop("FINISHED");
         s.result = correct ? "إجابة الفاصل صحيحة" : "حُسم الفاصل للمنافس";
+        archiveRound();
       } else if (s.phase === "MAIN") {
         if (correct) {
           score(s.turn, s.current!.points * (s.double ? 2 : 1), "إجابة صحيحة");
@@ -375,14 +403,20 @@ export function transition(
         action.timerId !== s.timerId
       )
         return state;
-      if (s.phase === "MAIN") mainFailed();
+      if (s.phase === "MAIN") {
+        (s.currentAttempts ??= []).push({ team:s.turn, option:null, correct:null, phase:s.phase });
+        mainFailed();
+      }
       else if (s.phase === "STEAL_BUZZ") resolve("انتهت فرصة الخطف");
       else if (s.phase === "STEAL_ANSWER") {
+        if (s.answerTeam) (s.currentAttempts ??= []).push({ team:s.answerTeam, option:null, correct:null, phase:s.phase });
         resolve("انتهى وقت إجابة الخطف");
       } else if (s.phase === "SUDDEN_ANSWER") {
         s.winner = other(s.answerTeam!);
         stop("FINISHED");
         s.result = "انتهى وقت الفاصل";
+        if (s.answerTeam) (s.currentAttempts ??= []).push({ team:s.answerTeam, option:null, correct:null, phase:"SUDDEN_ANSWER" });
+        archiveRound();
       } else return state;
       break;
     case "CORRECT_SCORE":
@@ -391,6 +425,7 @@ export function transition(
       break;
     case "RESOLVE_ROUND":
       if (s.phase !== "RESOLUTION") return state;
+      archiveRound();
       s.cells.find((c) => c.id === s.activeId)!.status = "exhausted";
       s.hidden = [];
       s.current = null;
@@ -408,6 +443,10 @@ export function transition(
       }
       break;
     case "END_MATCH":
+      if (s.current) {
+        if (s.phase !== "RESOLUTION") s.result = "أنهى المقدم المباراة قبل إكمال السؤال";
+        archiveRound();
+      }
       stop("FINISHED");
       s.result = "أنهى المقدم المباراة";
       s.winner = null;

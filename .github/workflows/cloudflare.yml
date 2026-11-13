@@ -48,15 +48,18 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           D1_DATABASE_ID: ${{ vars.D1_DATABASE_ID }}
+      - name: Build the matching game interface
+        run: npm run build
       - name: Publish live service configuration
         working-directory: .
         run: |
           node -e "const fs=require('node:fs');const data=JSON.parse(fs.readFileSync('project/deployment-result.json','utf8'));fs.writeFileSync('config.json',JSON.stringify(data,null,2)+'\n');"
+          cp -R project/dist/. .
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add config.json project/public/config.json
+          git add config.json project/public/config.json index.html admin.html sw.js privacy.html assets/
           if ! git diff --cached --quiet; then
-            git commit -m 'Connect game to deployed Cloudflare service'
+            git commit -m 'Publish game interface after service deployment'
             git push
           fi
       - name: Rebuild published Pages configuration

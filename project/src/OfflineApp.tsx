@@ -6,6 +6,7 @@ import { createGame, parseQuestions, type GameAction, other } from "./engine";
 import { useAinSeenEngine } from "./useAinSeenEngine";
 import { FinishScreen } from "./FinishScreen";
 import { ScoreCorrection } from "./ScoreCorrection";
+import { useArchiveGame } from "./GameArchive";
 
 const teamColors = [
   { name: "أحمر", value: "#bd3540" },
@@ -18,6 +19,7 @@ const teamColors = [
 
 export function OfflineApp() {
   const { state: s, start, reset, dispatch, remaining } = useAinSeenEngine();
+  useArchiveGame(s, s?.archiveId, "offline", s?.startedAt);
   const [names, setNames] = useState<[string, string]>([
     "الفريق الأحمر",
     "الفريق الأزرق",

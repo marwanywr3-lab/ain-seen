@@ -6,8 +6,9 @@ export type PublicQuestion = Omit<Question, "answer" | "hint"> &
   Partial<Pick<Question, "answer" | "hint">>;
 export type PublicGame = Omit<
   GameState,
-  "cells" | "current" | "sudden" | "seed"
+  "cells" | "current" | "sudden" | "seed" | "history" | "currentAttempts" | "currentHelpers"
 > & {
+  history?: GameState["history"];
   cells: {
     id: string;
     category: string;
@@ -23,6 +24,7 @@ export interface ParticipantView {
   connected: boolean;
 }
 export interface RoomView {
+  createdAt?: number;
   turnSeconds?: number;
   categoryIds: string[];
   hostTeam: TeamId | null;
@@ -80,7 +82,7 @@ export function project(
   hostTeam: TeamId | null = null,
 ): PublicGame | null {
   if (!game) return null;
-  const { cells, current, sudden: _sudden, seed: _seed, ...rest } = game;
+  const { cells, current, sudden: _sudden, seed: _seed, history, currentAttempts: _attempts, currentHelpers: _helpers, ...rest } = game;
   const reveal =
     (role === "host" && !hostTeam) ||
     game.phase === "RESOLUTION" ||
@@ -92,6 +94,7 @@ export function project(
   }
   return {
     ...rest,
+    ...(game.phase === "FINISHED" ? { history: history ?? [] } : {}),
     cells: cells.map(({ id, category, points, status }) => ({
       id,
       category,

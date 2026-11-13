@@ -1,6 +1,8 @@
 import { GameBoard } from "./GameBoard";
 import { FinishScreen } from "./FinishScreen";
 import { ScoreCorrection } from "./ScoreCorrection";
+import { AccountControls } from "./AccountControls";
+import { MyGames, useArchiveGame } from "./GameArchive";
 import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
 import { categories, categoryFor } from "./catalog";
@@ -308,12 +310,15 @@ export default function RemoteApp() {
           <img src={wordmark} alt="عين سين" />
         </a>
         <nav>
+          <AccountControls />
           <a href="#how-to-play">طريقة اللعب</a>
           <a href="#about">عن اللعبة</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
       </header>
-      {route === "#offline" ? (
+      {route === "#my-games" ? (
+        <MyGames />
+      ) : route === "#offline" ? (
         <OfflineApp />
       ) : route === "#admin" ? (
         <Admin base={base} />
@@ -468,7 +473,7 @@ export default function RemoteApp() {
           <section className="about-game panel" id="about"><h2>عن لعبة عين سين 🎮</h2><p><b>عين سين</b> لعبة مسابقات وتحديات جماعية، تجمع بين المتعة والحماس والمنافسة في أجواء مليئة بالتحدي والضحك!</p><p>اختبر معلوماتك، وتحدَّ أصدقاءك وعائلتك في مجموعة متنوعة من الفئات والأسئلة، واجمع النقاط لتثبت أن فريقك هو الأفضل!</p><p>صُممت عين سين لتكون تجربة ترفيهية سهلة وممتعة، تناسب الجلسات العائلية وجمعات الأصدقاء.</p><h3>👨‍💻 عن المطور</h3><p>تم تطوير وتصميم لعبة <b>عين سين</b> بواسطة <b>مروان باربود (Marwan Barbood)</b>.</p><p>الهدف من اللعبة هو تقديم تجربة عربية ممتعة تجمع الأصدقاء والعائلة بروح المنافسة والتحدي.</p><h3>🚀 جاهز للتحدي؟</h3><p>اجمع فريقك، واختر فئاتك المفضلة، وابدأ المنافسة الآن!</p><p><b>جرّب عين سين اليوم، واكتشف من هو صاحب المعلومات الأقوى بينكم! 🏆</b></p><p><b>تطوير وتصميم: مروان باربود</b><br /><i>صُنعت بشغف، لتُلعب بمتعة. ❤️</i></p></section>
         </main>
       )}
-      <footer>عين سين · القرار للقائد، والمتعة للجميع.</footer>
+      <footer>عين سين · القرار للقائد، والمتعة للجميع. · <a href="./privacy.html">سياسة الخصوصية</a></footer>
       {intro && !reducedMotion && (
         <Animation kind="intro" onEnd={() => setIntro(false)} />
       )}
@@ -501,6 +506,7 @@ function Room({
   const [categoryDraft, setCategoryDraft] = useState<string[] | null>(null);
   const [hideHost, setHideHost] = useState(false);
   const s = r?.game;
+  useArchiveGame(s ?? null, r ? `room_${r.code}_${r.createdAt ?? 0}` : undefined, "online", r?.createdAt);
   const host = r?.role === "host";
   useEffect(() => {
     if (!s) return;

@@ -63,6 +63,16 @@ test("score correction is restricted to the resolution and recorded", () => {
   assert.equal(s.teams.red.score, 450);
   assert.equal(s.audit.at(-1)?.reason, "تصحيح المقدم");
 });
+test("completed question history records the answer and remains unavailable before game end", () => {
+  let s = main();
+  const asked = s.current!;
+  s = transition(s, { type:"SUBMIT_ANSWER", team:s.turn, index:asked.options.indexOf(asked.answer) }, 100);
+  s = transition(s, { type:"RESOLVE_ROUND" }, 101);
+  assert.equal(s.history?.length, 1);
+  assert.equal(s.history?.[0]?.question.id, asked.id);
+  assert.equal(s.history?.[0]?.attempts[0]?.option, asked.answer);
+  assert.equal(s.history?.[0]?.attempts[0]?.correct, true);
+});
 test("schema rejects duplicate ids and invalid answers", () => {
   assert.throws(() => parseQuestions([questions[0], questions[0]]));
   assert.throws(() => parseQuestions([{ ...questions[0], answer: "ناقص" }]));
