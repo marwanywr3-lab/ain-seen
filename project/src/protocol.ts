@@ -62,6 +62,7 @@ export function allowed(
       "PAUSE",
       "REVEAL_QUESTION",
       "RESOLVE_ROUND",
+      "CORRECT_SCORE",
       "END_MATCH",
     ].includes(command.type)
   )
@@ -129,6 +130,8 @@ export function validCommand(v: unknown): v is RoomCommand {
       return team && typeof a.memberId === "string" && a.memberId.length <= 80;
     case "PAUSE":
       return typeof a.paused === "boolean";
+    case "CORRECT_SCORE":
+      return team && Number.isSafeInteger(a.score) && Math.abs(Number(a.score)) <= 1000000;
     case "SELECT_CELL":
       return team && typeof a.cellId === "string" && a.cellId.length < 200;
     case "TRIGGER_DOUBLE_DOWN":

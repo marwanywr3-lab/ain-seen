@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { categories } from "./catalog";
 export function CategoryPicker({
   value,
@@ -11,6 +11,7 @@ export function CategoryPicker({
   disabled?: boolean;
   children?: ReactNode;
 }) {
+  const [favorites, setFavorites] = useState<string[]>(() => { try { const v=JSON.parse(localStorage.getItem("ain-favorite-categories-v1") || "[]"); return Array.isArray(v) ? v.filter((id: unknown) => typeof id === "string" && categories.some(c => c.id === id)).slice(0,6) : []; } catch { return []; } });
   return (
     <section id="categories" className="category-picker panel" aria-label="اختيار الفئات">
       <div className="toolbar">
@@ -43,6 +44,8 @@ export function CategoryPicker({
         >
           مسح الاختيار
         </button>
+        <button disabled={disabled || value.length !== 6} onClick={() => { try { localStorage.setItem("ain-favorite-categories-v1", JSON.stringify(value)); setFavorites([...value]); } catch { /* optional storage */ } }}>حفظ الفئات المفضلة</button>
+        <button disabled={disabled || favorites.length !== 6} onClick={() => onChange([...favorites])}>اختيار المفضلة</button>
       </div>
       <div className="category-choices">
         {categories.map((c) => {

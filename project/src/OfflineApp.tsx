@@ -5,6 +5,7 @@ import { categoryFor } from "./catalog";
 import { createGame, parseQuestions, type GameAction, other } from "./engine";
 import { useAinSeenEngine } from "./useAinSeenEngine";
 import { FinishScreen } from "./FinishScreen";
+import { ScoreCorrection } from "./ScoreCorrection";
 
 const teamColors = [
   { name: "أحمر", value: "#bd3540" },
@@ -286,10 +287,9 @@ export function OfflineApp() {
                   {s.phase === "RESOLUTION" && (
                     <>
                       <h2>{s.result}</h2>
-                      <button onClick={() => setReveal(!reveal)}>
-                        {reveal ? "إخفاء الإجابة" : "كشف الإجابة الصحيحة"}
-                      </button>
-                      {reveal && <p>{s.current?.answer}</p>}
+                      <p><b>السؤال:</b> {s.current?.question}</p>
+                      <p><b>الإجابة الصحيحة:</b> {s.current?.answer}</p>
+                      <ScoreCorrection key={s.current?.id} teams={s.teams} onCorrect={(team, score) => send({ type: "CORRECT_SCORE", team, score })} />
                       <button
                         className="primary"
                         onClick={() => send({ type: "RESOLVE_ROUND" })}

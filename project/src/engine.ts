@@ -84,6 +84,7 @@ export type GameAction =
   | { type: "BUZZ_STEAL"; team: TeamId }
   | { type: "BUZZ_SUDDEN"; team: TeamId }
   | { type: "RESOLVE_ROUND" }
+  | { type: "CORRECT_SCORE"; team: TeamId; score: number }
   | { type: "END_MATCH" };
 export const other = (team: TeamId): TeamId =>
   team === "red" ? "blue" : "red";
@@ -383,6 +384,10 @@ export function transition(
         stop("FINISHED");
         s.result = "انتهى وقت الفاصل";
       } else return state;
+      break;
+    case "CORRECT_SCORE":
+      if (s.phase !== "RESOLUTION" || !Number.isSafeInteger(action.score) || Math.abs(action.score) > 1000000) return state;
+      score(action.team, action.score - s.teams[action.team].score, "تصحيح المقدم");
       break;
     case "RESOLVE_ROUND":
       if (s.phase !== "RESOLUTION") return state;

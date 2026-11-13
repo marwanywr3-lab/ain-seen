@@ -1,5 +1,6 @@
 import { GameBoard } from "./GameBoard";
 import { FinishScreen } from "./FinishScreen";
+import { ScoreCorrection } from "./ScoreCorrection";
 import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
 import { categories, categoryFor } from "./catalog";
@@ -904,8 +905,10 @@ function Room({
                   {s.phase === "RESOLUTION" && (
                     <div className="resolution">
                       <h2>{s.result}</h2>
+                      <p><b>السؤال:</b> {s.current?.question}</p>
                       <b>الإجابة: {s.current?.answer}</b>
                       <p>{s.current?.hint}</p>
+                      {visibleHost && <ScoreCorrection key={s.current?.id} teams={s.teams} onCorrect={(team, score) => command({ type: "CORRECT_SCORE", team, score })} />}
                       {visibleHost && (
                         <button
                           className="primary"

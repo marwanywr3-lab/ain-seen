@@ -54,6 +54,15 @@ function main() {
   );
   return transition(s, { type: "REVEAL_QUESTION" }, 0);
 }
+test("score correction is restricted to the resolution and recorded", () => {
+  let s = main();
+  assert.strictEqual(transition(s, { type: "CORRECT_SCORE", team: "red", score: 200 }, 1), s);
+  s = transition(s, { type: "SUBMIT_ANSWER", team: s.turn, index: s.current!.options.indexOf(s.current!.answer) }, 100);
+  assert.equal(s.phase, "RESOLUTION");
+  s = transition(s, { type: "CORRECT_SCORE", team: "red", score: 450 }, 101);
+  assert.equal(s.teams.red.score, 450);
+  assert.equal(s.audit.at(-1)?.reason, "تصحيح المقدم");
+});
 test("schema rejects duplicate ids and invalid answers", () => {
   assert.throws(() => parseQuestions([questions[0], questions[0]]));
   assert.throws(() => parseQuestions([{ ...questions[0], answer: "ناقص" }]));

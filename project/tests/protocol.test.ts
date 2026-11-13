@@ -8,6 +8,14 @@ const q = parseQuestions(
     readFileSync(new URL("../src/questions.json", import.meta.url), "utf8"),
   ),
 );
+test("only host may correct a score within bounds", () => {
+  const cmd = { type: "CORRECT_SCORE", team: "red", score: 400 } as const;
+  assert.equal(validCommand(cmd), true);
+  assert.equal(allowed("host", "phones", cmd), true);
+  for (const role of ["red", "blue", "viewer"] as const) assert.equal(allowed(role, "phones", cmd), false);
+  assert.equal(validCommand({ ...cmd, score: 1.5 }), false);
+  assert.equal(validCommand({ ...cmd, score: 1000001 }), false);
+});
 test("only host can configure valid turn durations", () => {
   for (const seconds of [20, 65, 120]) {
     const command = { type: "SET_TURN_SECONDS", seconds } as const;
