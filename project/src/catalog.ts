@@ -10,6 +10,8 @@ export interface Category {
 }
 export const categories: readonly Category[] = metadata;
 export const POINTS = [200, 400, 600] as const;
+export const SOLO_DURATION_SECONDS = 180;
+export const SOLO_QUESTION_COUNT = 18;
 export const defaultCategories = categories.slice(0, 6).map((c) => c.id);
 export function selection(input: unknown): string[] {
   if (

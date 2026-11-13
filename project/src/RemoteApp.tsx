@@ -5,6 +5,7 @@ import { AccountControls } from "./AccountControls";
 import { MyGames, useArchiveGame } from "./GameArchive";
 import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
+import { SoloChallenge } from "./SoloChallenge";
 import { categories, categoryFor } from "./catalog";
 import {
   createContext,
@@ -318,6 +319,8 @@ export default function RemoteApp() {
       </header>
       {route === "#my-games" ? (
         <MyGames />
+      ) : route === "#solo" ? (
+        <SoloChallenge />
       ) : route === "#offline" ? (
         <OfflineApp />
       ) : route === "#admin" ? (
@@ -369,6 +372,7 @@ export default function RemoteApp() {
               <p>لعبة أسئلة ثقافية واجتماعية ممتعة<br /> للعب مع الأصدقاء والعائلة</p>
               <a className="hero-action" href="#categories">ابدأ التحدي</a>
               <a className="offline-action" href="#offline">العب أوفلاين</a>
+              <a className="solo-action" href="#solo">تحدي فردي · ٣ دقائق</a>
             </div>
           </section>
           <section className="panel">
