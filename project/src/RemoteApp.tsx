@@ -372,7 +372,7 @@ export default function RemoteApp() {
               <p>لعبة أسئلة ثقافية واجتماعية ممتعة<br /> للعب مع الأصدقاء والعائلة</p>
               <a className="hero-action" href="#categories">ابدأ التحدي</a>
               <a className="offline-action" href="#offline">العب أوفلاين</a>
-              <a className="solo-action" href="#solo">تحدي فردي · ٣ دقائق</a>
+              <a className="solo-action" href="#solo">تحدي فردي (٣ دقائق)</a>
             </div>
           </section>
           <section className="panel">

@@ -28,3 +28,5 @@ export function selection(input: unknown): string[] {
 }
 export const categoryFor = (name: string) =>
   categories.find((c) => c.name === name);
+
+// Disambiguate the solo challenge duration label in the banner.
