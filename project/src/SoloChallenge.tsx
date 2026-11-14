@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { categories, POINTS, SOLO_DURATION_SECONDS, SOLO_QUESTION_COUNT } from "./catalog";
 import { parseQuestions, type Question } from "./engine";
 
-type Stage = "loading" | "intro" | "playing" | "finished";
+type Stage = "loading" | "selecting" | "playing" | "finished";
 function shuffle<T>(items: T[]): T[] {
   const result = [...items];
   for (let i = result.length - 1; i > 0; i--) {
@@ -11,13 +11,15 @@ function shuffle<T>(items: T[]): T[] {
   }
   return result;
 }
-function buildDeck(bank: Question[]): Question[] {
-  const eligible = categories.filter((category) =>
-    POINTS.every((points) => bank.some((q) => q.categoryId === category.id && q.points === points)),
-  );
-  if (eligible.length < 6) throw new Error("لا توجد فئات كافية لبدء التحدي");
-  const picked = shuffle([...eligible]).slice(0, 6);
-  const deck = picked.flatMap((category) =>
+function buildDeck(bank: Question[], selectedIds: string[]): Question[] {
+  if (selectedIds.length !== 6 || new Set(selectedIds).size !== 6)
+    throw new Error("اختر ٦ فئات مختلفة لبدء التحدي");
+  const picked = selectedIds.map((id) => categories.find((category) => category.id === id));
+  if (picked.some((category) => !category)) throw new Error("إحدى الفئات غير متاحة");
+  const selected = picked as (typeof categories)[number][];
+  if (selected.some((category) => POINTS.some((points) => !bank.some((q) => q.categoryId === category.id && q.points === points))))
+    throw new Error("تحتاج إحدى الفئات إلى أسئلة إضافية لبدء التحدي");
+  const deck = selected.flatMap((category) =>
     POINTS.map((points) => {
       const pool = bank.filter((q) => q.categoryId === category.id && q.points === points);
       const question = pool[Math.floor(Math.random() * pool.length)]!;
@@ -36,6 +38,7 @@ export function SoloChallenge() {
   const [bank, setBank] = useState<Question[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [stage, setStage] = useState<Stage>("loading");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deck, setDeck] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<string | null>(null);
@@ -50,12 +53,12 @@ export function SoloChallenge() {
     void import("./questions.json").then((module) => {
       if (live) {
         setBank(parseQuestions(module.default));
-        setStage("intro");
+        setStage("selecting");
       }
     }).catch((error: unknown) => {
       if (live) {
         setLoadError(error instanceof Error ? error.message : "تعذّر تحميل الأسئلة");
-        setStage("intro");
+        setStage("selecting");
       }
     });
     return () => { live = false; };
@@ -74,9 +77,9 @@ export function SoloChallenge() {
   }, [stage]);
 
   const start = () => {
-    if (!bank) return;
+    if (!bank || selectedIds.length !== 6) return;
     try {
-      setDeck(buildDeck(bank));
+      setDeck(buildDeck(bank, selectedIds));
       setIndex(0);
       setChosen(null);
       setScore(0);
@@ -111,14 +114,34 @@ export function SoloChallenge() {
     <main className="solo-page">
       <a className="solo-back" href="#">العودة للقائمة الرئيسية</a>
       {stage === "loading" && <section className="solo-card" role="status">جارٍ تجهيز بنك الأسئلة…</section>}
-      {stage === "intro" && (
+      {stage === "selecting" && (
         <section className="solo-card">
           <span className="solo-kicker">تحدي فردي</span>
-          <h1>كم سؤالًا تقدر تحل؟</h1>
-          <p>أجب عن أكبر عدد من ١٨ سؤالًا من ٦ فئات خلال ٣ دقائق. ستُختار الفئات والأسئلة عشوائيًا في كل محاولة.</p>
-          <p>تُضاف نقاط السؤال عند الإجابة الصحيحة، ولا تُخصم نقاط عند الخطأ. يمكنك تخطي السؤال ومتابعة التحدي.</p>
+          <h1>اختر فئات التحدي</h1>
+          <p>اختر ٦ فئات من أصل ٣٨. سيضم التحدي ١٨ سؤالًا من اختياراتك، ووقته ٣ دقائق.</p>
+          <div className="solo-picker-heading"><b>الفئات المختارة</b><strong role="status">{selectedIds.length.toLocaleString("ar-SA")} / ٦</strong></div>
+          <div className="solo-category-grid">
+            {categories.map((category) => {
+              const selected = selectedIds.includes(category.id);
+              return (
+                <button
+                  type="button"
+                  key={category.id}
+                  className={selected ? "solo-category-choice chosen" : "solo-category-choice"}
+                  aria-pressed={selected}
+                  disabled={!selected && selectedIds.length === 6}
+                  onClick={() => setSelectedIds((current) => selected ? current.filter((id) => id !== category.id) : [...current, category.id])}
+                >
+                  <img src={"./redesign/categories/" + category.id + ".webp"} alt="" loading="lazy" width="96" height="96" />
+                  <span>{category.name.split(" (")[0]}</span>
+                  <b aria-hidden="true">{selected ? "✓" : "+"}</b>
+                </button>
+              );
+            })}
+          </div>
+          <p>كل فئة تمنحك سؤالًا بقيمة ٢٠٠ وآخر بـ٤٠٠ وثالثًا بـ٦٠٠ نقطة. الإجابة الخاطئة أو التخطي لا يخصم نقاطًا.</p>
           {loadError && <p className="error" role="alert">{loadError}</p>}
-          <button className="primary" disabled={!bank} onClick={start}>ابدأ التحدي</button>
+          <button className="primary" disabled={!bank || selectedIds.length !== 6} onClick={start}>ابدأ التحدي</button>
         </section>
       )}
       {stage === "playing" && question && (
@@ -165,6 +188,7 @@ export function SoloChallenge() {
           <p>الوقت: {timeText(seconds)}</p>
           <div className="solo-actions">
             <button className="primary" onClick={start}>العب مرة أخرى</button>
+            <button onClick={() => setStage("selecting")}>اختيار فئات جديدة</button>
             <a className="solo-back" href="#">العودة للقائمة الرئيسية</a>
           </div>
         </section>
