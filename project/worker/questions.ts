@@ -9,6 +9,7 @@ interface QuestionEnv {
   AI_PRECHECK_MODEL?: string;
   RESEND_API_KEY?: string;
   AIN_SEEN_EMAIL_FROM?: string;
+  ADMIN_SETUP_OPEN?: string;
 }
 type AdminCheck = () => Promise<boolean>;
 const reportReasons = ["too_easy_or_obvious", "too_hard", "multiple_correct_answers", "selected_answer_wrong", "no_correct_answer", "category_mismatch"];
@@ -164,7 +165,7 @@ export async function questionRoutes(req: Request, env: QuestionEnv, isAdmin: Ad
     return await isAdmin() ? json({ ok: true }) : json({ error: "تحقق Cloudflare Access غير مكتمل." }, 401);
   }
   if (url.pathname === "/admin/auth/setup" && req.method === "POST") {
-    if (!(await isAdmin())) return json({ error: "أكمل تحقق Cloudflare Access للتهيئة الأولى." }, 401);
+    if (env.ADMIN_SETUP_OPEN !== "true" && !(await isAdmin())) return json({ error: "أكمل تحقق Cloudflare Access للتهيئة الأولى." }, 401);
     const existing = await env.DB.prepare("SELECT value FROM question_settings WHERE key='admin_password_hash'").first<{value:string}>();
     if (existing) return json({ error: "تمت تهيئة لوحة الإدارة مسبقًا." }, 409);
     const input = await readBody(req);
