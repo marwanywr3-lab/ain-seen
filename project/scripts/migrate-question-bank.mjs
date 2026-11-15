@@ -14,7 +14,7 @@ const run = (rows) => {
   ], { stdio: "inherit", env: process.env });
   if (result.status !== 0) process.exit(result.status || 1);
 };
-for (let offset = 0; offset < questions.length; offset += 40) {
+for (let offset = 0; offset < questions.length; offset += 10) {
   const rows = questions.slice(offset, offset + 10).map((q) => {
     const payload = JSON.stringify(q);
     const created = Date.now();
