@@ -6,6 +6,8 @@ import { MyGames, useArchiveGame } from "./GameArchive";
 import { OfflineApp } from "./OfflineApp";
 import { CategoryPicker } from "./CategoryPicker";
 import { SoloChallenge } from "./SoloChallenge";
+import { QuestionDashboard } from "./QuestionDashboard";
+import { QuestionSuggestion } from "./QuestionSuggestion";
 import { categories, categoryFor } from "./catalog";
 import {
   createContext,
@@ -314,17 +316,20 @@ export default function RemoteApp() {
           <AccountControls />
           <a href="#how-to-play">طريقة اللعب</a>
           <a href="#about">عن اللعبة</a>
+          <a className="suggest-nav-link" href="#suggest">اقترح سؤالًا</a>
           <span className="pill">مسابقة • تشاور • خطف</span>
         </nav>
       </header>
       {route === "#my-games" ? (
         <MyGames />
+      ) : route === "#suggest" ? (
+        <QuestionSuggestion base={base} />
       ) : route === "#solo" ? (
-        <SoloChallenge />
+        <SoloChallenge base={base} />
       ) : route === "#offline" ? (
         <OfflineApp />
       ) : route === "#admin" ? (
-        <Admin base={base} />
+        <QuestionDashboard base={base} />
       ) : invitedCode ? (
         <main className="panel join-panel">
           <h1>انضم للغرفة</h1>
@@ -509,6 +514,8 @@ function Room({
   } | null>(null);
   const [categoryDraft, setCategoryDraft] = useState<string[] | null>(null);
   const [hideHost, setHideHost] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportMessage, setReportMessage] = useState("");
   const s = r?.game;
   useArchiveGame(s ?? null, r ? `room_${r.code}_${r.createdAt ?? 0}` : undefined, "online", r?.createdAt);
   const host = r?.role === "host";
@@ -774,7 +781,10 @@ function Room({
                       ? `${s.current.points} نقطة`
                       : "قبل الكشف"}
                 </span>
+                {s.current && <button className="question-report" type="button" onClick={() => setReportOpen((v) => !v)}>⚑ إبلاغ</button>}
               </div>
+              {reportOpen && s.current && <form className="question-report-form" onSubmit={async (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); try { const result = await api<{emailNotification:string}>(base, "/questions/" + s.current!.id + "/reports", { method: "POST", body: JSON.stringify({ reason: form.get("reason"), name: form.get("name"), email: form.get("email"), details: form.get("details") }) }); setReportMessage(result.emailNotification === "sent" ? "وصل البلاغ، شكرًا لمساعدتنا. وأُرسل تنبيه للمراجعة." : "وصل البلاغ وحُفظ للمراجعة، لكن تنبيه البريد غير مهيأ أو تعذر إرساله."); setReportOpen(false); } catch (e) { setReportMessage((e as Error).message); } }}><label>اسمك<input name="name" required maxLength={60} autoComplete="name"/></label><label>بريدك الإلكتروني<input name="email" type="email" required maxLength={254} autoComplete="email"/></label><label>سبب البلاغ<select name="reason" required><option value="too_easy_or_obvious">السؤال سهل جدًا أو واضح</option><option value="too_hard">السؤال صعب جدًا</option><option value="multiple_correct_answers">أكثر من إجابة صحيحة</option><option value="selected_answer_wrong">الإجابة المحددة غير صحيحة</option><option value="no_correct_answer">لا توجد إجابة صحيحة</option><option value="category_mismatch">السؤال لا يتناسب مع الفئة المحددة</option></select></label><label>تفاصيل إضافية<textarea name="details" maxLength={1000}/></label><small>لن يظهر اسمك أو بريدك للاعبين.</small><button className="primary">إرسال البلاغ</button><button type="button" onClick={() => setReportOpen(false)}>إلغاء</button></form>}
+              {reportMessage && <p role="status">{reportMessage}</p>}
               {s.phase === "PREPARE" ? (
                 <div className="prepare">
                   <h1>جاهزين للتحدي؟</h1>

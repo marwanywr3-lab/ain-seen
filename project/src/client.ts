@@ -37,9 +37,14 @@ export async function api<T>(
   init: RequestInit = {},
 ): Promise<T> {
   if (!base) throw Error("خادم الغرف لم يُنشر أو لم يُربط بالموقع بعد.");
+  const headers = new Headers(init.headers);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const adminToken = path.startsWith("/admin/") ? sessionStorage.getItem("ain-seen-admin-session") : null;
+  if (adminToken) headers.set("Authorization", `Bearer ${adminToken}`);
   const response = await fetch(base.replace(/\/$/, "") + path, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init.headers },
+    credentials: "include",
+    headers,
   });
   let data;
   try {

@@ -7,6 +7,7 @@ import { useAinSeenEngine } from "./useAinSeenEngine";
 import { FinishScreen } from "./FinishScreen";
 import { ScoreCorrection } from "./ScoreCorrection";
 import { useArchiveGame } from "./GameArchive";
+import { api, useServiceUrl } from "./client";
 
 const teamColors = [
   { name: "أحمر", value: "#bd3540" },
@@ -18,6 +19,7 @@ const teamColors = [
 ];
 
 export function OfflineApp() {
+  const { base, ready: serviceReady } = useServiceUrl();
   const { state: s, start, reset, dispatch, remaining } = useAinSeenEngine();
   useArchiveGame(s, s?.archiveId, "offline", s?.startedAt);
   const [names, setNames] = useState<[string, string]>([
@@ -30,12 +32,51 @@ export function OfflineApp() {
   const [error, setError] = useState("");
   const [ready, setReady] = useState(false);
   const [cached, setCached] = useState(false);
+  const [availableQuestions, setAvailableQuestions] = useState<ReturnType<typeof parseQuestions> | null>(null);
   const [reveal, setReveal] = useState(false);
   useEffect(() => {
-    void import("./questions.json")
-      .then(() => setReady(true))
-      .catch(() => setError("حمّل ملفات وضع الأوفلاين أثناء الاتصال أولًا."));
-  }, []);
+    if (!serviceReady) return;
+    let live = true;
+    const prepare = async () => {
+      try {
+        if (base) {
+          const active = await api<{ questions: unknown[] }>(base, "/questions");
+          const parsed = parseQuestions(active.questions);
+          if (live) {
+            localStorage.setItem("ain-seen-active-question-pool-v1", JSON.stringify(parsed));
+            setAvailableQuestions(parsed);
+            setReady(true);
+            return;
+          }
+        }
+      } catch {
+        // Use the last synchronized pool when the device is offline.
+      }
+      try {
+        const saved = localStorage.getItem("ain-seen-active-question-pool-v1");
+        if (saved) {
+          const parsed = parseQuestions(JSON.parse(saved));
+          if (live) {
+            setAvailableQuestions(parsed);
+            setReady(true);
+            setError("تعذر الاتصال؛ سيُستخدم آخر بنك أسئلة تمت مزامنته على هذا الجهاز.");
+          }
+          return;
+        }
+        const bank = await import("./questions.json");
+        if (live) {
+          const parsed = parseQuestions(bank.default);
+          setAvailableQuestions(parsed);
+          setReady(true);
+          if (!base) setError("وضع الأوفلاين يستخدم البنك المضمّن إلى أن تتم مزامنته مع الخادم.");
+        }
+      } catch {
+        if (live) setError("حمّل ملفات وضع الأوفلاين أثناء الاتصال أولًا.");
+      }
+    };
+    void prepare();
+    return () => { live = false; };
+  }, [base, serviceReady]);
   useEffect(() => setReveal(false), [s?.current?.id, s?.phase]);
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -49,10 +90,10 @@ export function OfflineApp() {
   }, []);
   const begin = async () => {
     try {
-      const bank = await import("./questions.json");
+      if (!availableQuestions) throw Error("بنك الأسئلة غير جاهز على هذا الجهاز.");
       start(
         createGame(
-          parseQuestions(bank.default),
+          availableQuestions,
           names,
           crypto.getRandomValues(new Uint32Array(1))[0]!,
           ids,
@@ -122,7 +163,7 @@ export function OfflineApp() {
             </label>
             <p>
               {ready
-                ? "بنك الأسئلة جاهز على هذا الجهاز."
+                ? "بنك الأسئلة المتزامن جاهز على هذا الجهاز."
                 : "جارٍ تجهيز الأسئلة…"}
             </p>
           </section>

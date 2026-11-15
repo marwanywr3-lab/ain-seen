@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { categories, POINTS, SOLO_DURATION_SECONDS, SOLO_QUESTION_COUNT } from "./catalog";
 import { parseQuestions, type Question } from "./engine";
+import { api } from "./client";
 
 type Stage = "loading" | "selecting" | "playing" | "finished";
 function shuffle<T>(items: T[]): T[] {
@@ -34,7 +35,7 @@ function timeText(seconds: number) {
   return `${mm}:${ss}`;
 }
 
-export function SoloChallenge() {
+export function SoloChallenge({base}:{base:string}) {
   const [bank, setBank] = useState<Question[] | null>(null);
   const [loadError, setLoadError] = useState("");
   const [stage, setStage] = useState<Stage>("loading");
@@ -50,9 +51,9 @@ export function SoloChallenge() {
 
   useEffect(() => {
     let live = true;
-    void import("./questions.json").then((module) => {
+    void api<{questions:Question[]}>(base,"/questions").then((module) => {
       if (live) {
-        setBank(parseQuestions(module.default));
+        setBank(parseQuestions(module.questions));
         setStage("selecting");
       }
     }).catch((error: unknown) => {
@@ -62,7 +63,7 @@ export function SoloChallenge() {
       }
     });
     return () => { live = false; };
-  }, []);
+  }, [base]);
 
   useEffect(() => {
     if (stage !== "playing") return;

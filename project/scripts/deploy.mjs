@@ -30,6 +30,12 @@ run([
   "--config",
   "wrangler.deploy.json",
 ]);
+const imported = spawnSync(
+  "node",
+  ["scripts/migrate-question-bank.mjs", "--remote"],
+  { stdio: "inherit", env: { ...process.env, WRANGLER_CONFIG: "wrangler.deploy.json" } },
+);
+if (imported.status !== 0) process.exit(imported.status || 1);
 const deployed = spawnSync(
   "npx",
   ["wrangler", "deploy", "--config", "wrangler.deploy.json"],

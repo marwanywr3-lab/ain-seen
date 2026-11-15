@@ -3,6 +3,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 import { saveRoomToD1, removeRoomFromD1, type RoomEvent } from "./persistence";
 import { DurableObject } from "cloudflare:workers";
 import { userLibrary } from "./user-library";
+import { activeQuestions, questionRoutes } from "./questions";
 
 import {
   createGame,
@@ -28,9 +29,13 @@ interface Env {
   ALLOWED_ORIGINS: string;
   DEV_ADMIN_TOKEN?: string;
   ENVIRONMENT?: string;
+  AI_PRECHECK_API_KEY?: string;
+  AI_PRECHECK_URL?: string;
+  AI_PRECHECK_MODEL?: string;
   CREATE_LIMITER: RateLimit;
 }
 interface Bank {
+  schemaVersion: 3;
   questions: Question[];
   disabled: number[];
   revision: number;
@@ -70,11 +75,14 @@ async function body(req: Request): Promise<unknown> {
 }
 const token = () => crypto.randomUUID() + crypto.randomUUID();
 async function bank(env: Env): Promise<Bank> {
-  const row = await env.DB.prepare(
-    "SELECT payload, revision FROM question_bank WHERE id=1",
-  ).first<{ payload: string; revision: number }>();
-  if (!row) throw Error("قاعدة الأسئلة لم تجهز بعد");
-  return { ...JSON.parse(row.payload), revision: row.revision };
+  const active = await activeQuestions(env.DB);
+  if (!active.questions.length) throw Error("لا توجد أسئلة في قاعدة البيانات");
+  return {
+    schemaVersion: 3,
+    questions: active.questions,
+    disabled: [],
+    revision: 1,
+  };
 }
 const jwks = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 async function isAdmin(req: Request, env: Env) {
@@ -118,7 +126,10 @@ export default {
     let res: Response;
     try {
       if (url.pathname === "/health") res = json({ ok: true });
-      else if (url.pathname === "/account/library") res = await userLibrary(req, env.DB);
+      else {
+        const questionsResponse = await questionRoutes(req, env, () => isAdmin(req, env));
+        if (questionsResponse) res = questionsResponse;
+        else if (url.pathname === "/account/library") res = await userLibrary(req, env.DB);
       else if (url.pathname === "/rooms" && req.method === "POST") {
         const limit = await env.CREATE_LIMITER.limit({
           key: req.headers.get("CF-Connecting-IP") || "local",
@@ -214,6 +225,7 @@ export default {
             : json({ error: "عدّل مستخدم آخر المجموعة؛ أعد تحميلها" }, 409);
         } else res = json({ error: "طريقة غير مدعومة" }, 405);
       } else res = json({ error: "غير موجود" }, 404);
+      }
     } catch (e) {
       res = json(
         { error: e instanceof Error ? e.message : "تعذر تنفيذ العملية" },

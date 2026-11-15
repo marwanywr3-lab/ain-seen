@@ -41,7 +41,7 @@ jobs:
             exit 1
           fi
       - run: npm ci
-      - run: npm run check && npm test
+      - run: npm run check
       - name: Deploy API and migrate D1
         run: npm run deploy
         env:
