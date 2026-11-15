@@ -38,7 +38,9 @@
     }
   ],
   "vars": {
-    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io,https://ain-seen.marwanbarbood.com,https://ain-seen-recovery.marwanbarbood.com"
+    "ALLOWED_ORIGINS": "https://marwanywr3-lab.github.io,https://ain-seen.marwanbarbood.com,https://ain-seen-recovery.marwanbarbood.com",
+    "ACCESS_TEAM_DOMAIN": "round-snow-31ff.cloudflareaccess.com",
+    "ACCESS_AUD": "66b18809ceaff27a8d8b9a353ef7aac73839c12828eec543208cfbff997e7465"
   },
   "account_id": "cce61ab85b01cefa97c4def39e73c5ff"
 }

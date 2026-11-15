@@ -71,11 +71,11 @@ async function precheck(question: Question, env: QuestionEnv) {
   const apiKey = env.AI_PRECHECK_API_KEY || saved.ai_precheck_api_key;
   if (!apiKey) return { status: "not_configured", notes: "لم يُضف مفتاح فحص الذكاء الاصطناعي بعد." };
   try {
-    const response = await fetch(env.AI_PRECHECK_URL || saved.ai_precheck_url || "https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(env.AI_PRECHECK_URL || saved.ai_precheck_url || "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: env.AI_PRECHECK_MODEL || saved.ai_precheck_model || "gpt-4o-mini",
+        model: env.AI_PRECHECK_MODEL || saved.ai_precheck_model || "gemini-3.8-flash",
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: "قيّم سؤال مسابقة عربية منطقياً. أعد JSON فقط بمفاتيح logical, answerCorrect, clean, notes. القيم الثلاث الأولى boolean، وnotes نص عربي موجز. لا تعتمد السؤال آلياً." },
@@ -171,13 +171,13 @@ export async function questionRoutes(req: Request, env: QuestionEnv, isAdmin: Ad
     if (!validPassword(input.password)) throw Error("استخدم كلمة مرور من ١٢ إلى ١٢٨ حرفًا");
     const aiKey = typeof input.apiKey === "string" ? input.apiKey.trim() : "";
     if (aiKey.length < 8 || aiKey.length > 500) throw Error("أدخل مفتاح API صالحًا");
-    const endpoint = typeof input.url === "string" ? input.url.trim() : "https://api.openai.com/v1/chat/completions";
+    const endpoint = typeof input.url === "string" ? input.url.trim() : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
     let parsed: URL;
     try { parsed = new URL(endpoint); } catch { throw Error("رابط API غير صالح"); }
     if (parsed.protocol !== "https:" || parsed.username || parsed.password) throw Error("استخدم رابط API آمنًا يبدأ بـ HTTPS");
     const now = Date.now(), salt = b64(crypto.getRandomValues(new Uint8Array(16)));
     const hashed = await passwordHash(input.password, unb64(salt));
-    for (const [key,value] of [["admin_password_salt",salt], ["admin_password_hash",hashed], ["ai_precheck_api_key",aiKey], ["ai_precheck_url",endpoint], ["ai_precheck_model",typeof input.model === "string" && input.model.trim() ? input.model.trim() : "gpt-4o-mini"]] as const) {
+    for (const [key,value] of [["admin_password_salt",salt], ["admin_password_hash",hashed], ["ai_precheck_api_key",aiKey], ["ai_precheck_url",endpoint], ["ai_precheck_model",typeof input.model === "string" && input.model.trim() ? input.model.trim() : "gemini-3.8-flash"]] as const) {
       await env.DB.prepare("INSERT INTO question_settings(key,value,updated_at) VALUES(?,?,?)").bind(key,value,now).run();
     }
     return json({ ok: true, initialized: true });
@@ -212,7 +212,7 @@ export async function questionRoutes(req: Request, env: QuestionEnv, isAdmin: Ad
   if (url.pathname === "/admin/settings/ai" && req.method === "GET") {
     const settings = await env.DB.prepare("SELECT key,value FROM question_settings WHERE key IN ('ai_precheck_api_key','ai_precheck_url','ai_precheck_model')").all<{key:string;value:string}>();
     const saved = Object.fromEntries(settings.results.map((row) => [row.key, row.value]));
-    return json({ configured: Boolean(env.AI_PRECHECK_API_KEY || saved.ai_precheck_api_key), url: saved.ai_precheck_url || env.AI_PRECHECK_URL || "https://api.openai.com/v1/chat/completions", model: saved.ai_precheck_model || env.AI_PRECHECK_MODEL || "gpt-4o-mini", mailConfigured: Boolean(env.RESEND_API_KEY || saved.notification_api_key), mailFrom: saved.notification_from || env.AIN_SEEN_EMAIL_FROM || "" });
+    return json({ configured: Boolean(env.AI_PRECHECK_API_KEY || saved.ai_precheck_api_key), url: saved.ai_precheck_url || env.AI_PRECHECK_URL || "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", model: saved.ai_precheck_model || env.AI_PRECHECK_MODEL || "gemini-3.8-flash", mailConfigured: Boolean(env.RESEND_API_KEY || saved.notification_api_key), mailFrom: saved.notification_from || env.AIN_SEEN_EMAIL_FROM || "" });
   }
   if (url.pathname === "/admin/settings/ai" && req.method === "PUT") {
     const input = await readBody(req);
