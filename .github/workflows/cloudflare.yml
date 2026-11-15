@@ -13,6 +13,7 @@ on:
       - project/src/data.json
       - project/migrations/**
       - project/scripts/deploy.mjs
+      - project/scripts/migrate-question-bank.mjs
 permissions:
   contents: write
   pages: write
