@@ -8,6 +8,7 @@ config.account_id = process.env.CLOUDFLARE_ACCOUNT_ID || config.account_id;
 config.d1_databases[0].database_id =
   process.env.D1_DATABASE_ID || config.d1_databases[0].database_id;
 config.vars = {
+  ...config.vars,
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || config.vars.ALLOWED_ORIGINS,
 };
 if (!/^[a-f0-9]{32}$/.test(config.account_id || ""))
