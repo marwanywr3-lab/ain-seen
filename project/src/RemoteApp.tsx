@@ -8,6 +8,7 @@ import { CategoryPicker } from "./CategoryPicker";
 import { SoloChallenge } from "./SoloChallenge";
 import { QuestionDashboard } from "./QuestionDashboard";
 import { QuestionSuggestion } from "./QuestionSuggestion";
+import { QuestionReport } from "./QuestionReport";
 import { categories, categoryFor } from "./catalog";
 import {
   createContext,
@@ -816,7 +817,7 @@ function Room({
                 </div>
               ) : (
                 <>
-                  <h2>{s.current?.question}</h2>
+                  <div className="question-title-row"><h2>{s.current?.question}</h2>{s.current && <QuestionReport key={s.current.id} base={base} questionId={s.current.id} />}</div>
                   {s.deadline !== null && (
                     <div
                       className={`timer ${remaining < 5000 ? "urgent" : ""}`}

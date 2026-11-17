@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { categories, POINTS, SOLO_DURATION_SECONDS, SOLO_QUESTION_COUNT } from "./catalog";
 import { parseQuestions, type Question } from "./engine";
 import { api } from "./client";
+import { QuestionReport } from "./QuestionReport";
 
 type Stage = "loading" | "selecting" | "playing" | "finished";
 function shuffle<T>(items: T[]): T[] {
@@ -154,7 +155,7 @@ export function SoloChallenge({base}:{base:string}) {
           </div>
           <div className="solo-progress" aria-label={`السؤال ${index + 1} من ${SOLO_QUESTION_COUNT}`}><i style={{ width: `${((index + 1) / SOLO_QUESTION_COUNT) * 100}%` }} /></div>
           <p className="solo-category">{question.category} <span>· {question.points.toLocaleString("ar-SA")} نقطة</span></p>
-          <h1 className="solo-question">{question.question}</h1>
+          <div className="question-title-row solo-question-title"><h1 className="solo-question">{question.question}</h1><QuestionReport key={question.id} base={base} questionId={question.id} /></div>
           <div className="solo-options">
             {question.options.map((option, optionIndex) => (
               <button

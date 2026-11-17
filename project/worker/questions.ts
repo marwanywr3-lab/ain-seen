@@ -12,8 +12,9 @@ interface QuestionEnv {
   ADMIN_SETUP_OPEN?: string;
 }
 type AdminCheck = () => Promise<boolean>;
-const reportReasons = ["too_easy_or_obvious", "too_hard", "multiple_correct_answers", "selected_answer_wrong", "no_correct_answer", "category_mismatch"];
+const reportReasons = ["too_easy_or_obvious", "too_hard", "multiple_correct_answers", "selected_answer_wrong", "no_correct_answer", "category_mismatch", "other"];
 const ownerEmail = "barboodmarwan@gmail.com";
+const reportReasonLabels: Record<string,string> = { too_easy_or_obvious: "سهل جدًا أو واضح", too_hard: "صعب جدًا", multiple_correct_answers: "أكثر من إجابة صحيحة", selected_answer_wrong: "الإجابة المحددة غير صحيحة", no_correct_answer: "لا توجد إجابة صحيحة", category_mismatch: "السؤال لا يتناسب مع الفئة المحددة", other: "بلاغ آخر" };
 const json = (value: unknown, status = 200) => Response.json(value, { status });
 export async function activeQuestions(db: D1Database) {
   const rows = await db.prepare("SELECT payload,category_id,points,status FROM questions ORDER BY id").all<{payload:string;category_id:string;points:number;status:string}>();
@@ -80,7 +81,7 @@ async function precheck(question: Question, env: QuestionEnv) {
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: "قيّم سؤال مسابقة عربية منطقياً. أعد JSON فقط بمفاتيح logical, answerCorrect, clean, notes. القيم الثلاث الأولى boolean، وnotes نص عربي موجز. لا تعتمد السؤال آلياً." },
-          { role: "user", content: JSON.stringify({ question: question.question, options: question.options, answer: question.answer, category: question.category, points: question.points }) },
+          { role: "user", content: JSON.stringify({ question: question.question, options: question.options, answer: question.answer, hint: question.hint, category: question.category, points: question.points }) },
         ],
       }),
       signal: AbortSignal.timeout(12000),
@@ -133,13 +134,14 @@ export async function questionRoutes(req: Request, env: QuestionEnv, isAdmin: Ad
     const reason = input.reason;
     if (typeof reason !== "string" || !reportReasons.includes(reason)) throw Error("سبب البلاغ غير صالح");
     const details = typeof input.details === "string" ? input.details.trim().slice(0,1000) : "";
+    if (reason === "other" && !details) throw Error("اكتب تفاصيل البلاغ الآخر");
     const active = await activeQuestions(env.DB);
     const reported = active.questions.find((q) => q.id === Number(reportMatch[1]));
     if (!reported) return json({ error: "السؤال غير موجود أو غير متاح" }, 404);
     const result = await env.DB.prepare("INSERT INTO question_reports(question_id,reason,reporter_name,reporter_email,details,created_at) VALUES(?,?,?,?,?,?)")
       .bind(reported.id, reason, contact.name, contact.email, details, Date.now()).run();
     if (!result.meta.changes) return json({ error: "تعذر حفظ البلاغ" }, 500);
-    const emailStatus = await notifyOwner(env, "بلاغ سؤال جديد في عين سين", `الاسم: ${contact.name}\nالبريد: ${contact.email}\nالسبب: ${reason}\nالسؤال: ${reported.question}\nالإجابة: ${reported.answer}\nملاحظات: ${details || "لا توجد"}`);
+    const emailStatus = await notifyOwner(env, "بلاغ سؤال جديد في عين سين", `الاسم: ${contact.name}\nالبريد: ${contact.email}\nالسبب: ${reportReasonLabels[reason] || reason}\nالسؤال: ${reported.question}\nالإجابة: ${reported.answer}\nملاحظات: ${details || "لا توجد"}`);
     await env.DB.prepare("UPDATE question_reports SET notification_status=? WHERE id=?").bind(emailStatus, result.meta.last_row_id).run();
     return json({ ok: true, emailNotification: emailStatus }, 201);
   }

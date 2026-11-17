@@ -1,4 +1,5 @@
 import { GameBoard } from "./GameBoard";
+import { QuestionReport } from "./QuestionReport";
 import { useEffect, useState } from "react";
 import { CategoryPicker } from "./CategoryPicker";
 import { categoryFor } from "./catalog";
@@ -231,7 +232,7 @@ export function OfflineApp() {
                 </>
               ) : (
                 <>
-                  <h2>{s.current?.question}</h2>
+                  <div className="question-title-row"><h2>{s.current?.question}</h2>{s.current && <QuestionReport key={s.current.id} base={base} questionId={s.current.id} />}</div>
                   {s.deadline !== null && (
                     <p role="timer">
                       الوقت: {Math.ceil(remaining / 1000)} ثانية
