@@ -165,23 +165,26 @@ export async function questionRoutes(req: Request, env: QuestionEnv, isAdmin: Ad
     return await isAdmin() ? json({ ok: true }) : json({ error: "تحقق Cloudflare Access غير مكتمل." }, 401);
   }
   if (url.pathname === "/admin/auth/setup" && req.method === "POST") {
-    if (env.ADMIN_SETUP_OPEN !== "true" && !(await isAdmin())) return json({ error: "أكمل تحقق Cloudflare Access للتهيئة الأولى." }, 401);
+    if (env.ADMIN_SETUP_OPEN !== "true" && !(await isAdmin())) return json({ error: "الدخول غير متاح." }, 401);
     const existing = await env.DB.prepare("SELECT value FROM question_settings WHERE key='admin_password_hash'").first<{value:string}>();
-    if (existing) return json({ error: "تمت تهيئة لوحة الإدارة مسبقًا." }, 409);
+    if (existing) return json({ error: "تم إعداد اللوحة مسبقًا." }, 409);
     const input = await readBody(req);
-    if (!validPassword(input.password)) throw Error("استخدم كلمة مرور من ١٢ إلى ١٢٨ حرفًا");
     const aiKey = typeof input.apiKey === "string" ? input.apiKey.trim() : "";
     if (aiKey.length < 8 || aiKey.length > 500) throw Error("أدخل مفتاح API صالحًا");
     const endpoint = typeof input.url === "string" ? input.url.trim() : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
     let parsed: URL;
     try { parsed = new URL(endpoint); } catch { throw Error("رابط API غير صالح"); }
     if (parsed.protocol !== "https:" || parsed.username || parsed.password) throw Error("استخدم رابط API آمنًا يبدأ بـ HTTPS");
-    const now = Date.now(), salt = b64(crypto.getRandomValues(new Uint8Array(16)));
-    const hashed = await passwordHash(input.password, unb64(salt));
+    const now = Date.now(), saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    const salt = b64(saltBytes);
+    const bootstrapPassword = b64(crypto.getRandomValues(new Uint8Array(32)));
+    const hashed = await passwordHash(bootstrapPassword, saltBytes);
     for (const [key,value] of [["admin_password_salt",salt], ["admin_password_hash",hashed], ["ai_precheck_api_key",aiKey], ["ai_precheck_url",endpoint], ["ai_precheck_model",typeof input.model === "string" && input.model.trim() ? input.model.trim() : "gemini-3.8-flash"]] as const) {
       await env.DB.prepare("INSERT INTO question_settings(key,value,updated_at) VALUES(?,?,?)").bind(key,value,now).run();
     }
-    return json({ ok: true, initialized: true });
+    const sessionToken = b64(crypto.getRandomValues(new Uint8Array(32)));
+    await env.DB.prepare("INSERT INTO question_admin_sessions(token_hash,created_at,expires_at) VALUES(?,?,?)").bind(await sha256(sessionToken),now,now+7*86400000).run();
+    return json({ ok: true, initialized: true, token: sessionToken, expiresAt: now+7*86400000 });
   }
   if (url.pathname === "/admin/auth/login" && req.method === "POST") {
     const limit = await env.CREATE_LIMITER?.limit({ key: "admin-login:" + (req.headers.get("CF-Connecting-IP") || "local") });
